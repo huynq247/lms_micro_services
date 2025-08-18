@@ -27,9 +27,15 @@ export interface Deck {
   title: string;
   description: string;
   instructor_id: string;
+  instructor_name?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
   is_active: boolean;
-  flashcards: Flashcard[];
+  is_public: boolean;
+  is_published?: boolean; // Backend field
+  flashcards?: Flashcard[];
+  total_flashcards?: number;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Flashcard {
@@ -39,6 +45,7 @@ export interface Flashcard {
   back_content: string;
   difficulty: 'easy' | 'medium' | 'hard';
   created_at: string;
+  updated_at?: string;
 }
 
 export interface CreateCourseRequest {
@@ -57,7 +64,9 @@ export interface CreateLessonRequest {
 export interface CreateDeckRequest {
   title: string;
   description: string;
+  difficulty: 'easy' | 'medium' | 'hard';
   instructor_id: string;
+  is_public?: boolean;
 }
 
 export interface CreateFlashcardRequest {
@@ -116,7 +125,10 @@ export const contentService = {
   // Decks
   getDecks: async (): Promise<{ decks: Deck[] }> => {
     const response = await apiClient.get('/api/decks/');
-    return response.data;
+    // Map API response structure (items) to expected frontend structure (decks)
+    return {
+      decks: response.data.items || []
+    };
   },
 
   getDeck: async (deckId: string): Promise<Deck> => {

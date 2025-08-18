@@ -15,6 +15,9 @@ import AssignmentsPage from './pages/assignments/AssignmentsPage';
 import AssignmentDetailPage from './pages/assignments/AssignmentDetailPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import AnalyticsPage from './pages/analytics/AnalyticsPage';
+import DecksPage from './pages/decks/DecksPage';
+import DeckDetailPage from './pages/decks/DeckDetailPage';
+import FlashcardStudyPage from './pages/decks/FlashcardStudyPage';
 
 // Layout
 import Layout from './components/layout/Layout';
@@ -102,6 +105,9 @@ function App() {
                 <Route path="courses/:courseId" element={<CourseDetailPage />} />
                 <Route path="assignments" element={<AssignmentsPage />} />
                 <Route path="assignments/:assignmentId" element={<AssignmentDetailPage />} />
+                <Route path="decks" element={<DecksPage />} />
+                <Route path="decks/:deckId" element={<DeckDetailPage />} />
+                <Route path="decks/:deckId/study" element={<FlashcardStudyPage />} />
                 <Route path="users" element={<UserManagementPage />} />
                 <Route path="analytics" element={<AnalyticsPage />} />
               </Route>

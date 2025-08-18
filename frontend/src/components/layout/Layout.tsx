@@ -17,6 +17,7 @@ import {
   Dashboard,
   School,
   Assignment,
+  Quiz,
   ExitToApp,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -38,6 +39,7 @@ const Layout: React.FC = () => {
     { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard', roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
     { text: 'Courses', icon: <School />, path: '/courses', roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
     { text: 'Assignments', icon: <Assignment />, path: '/assignments', roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
+    { text: 'Flashcards', icon: <Quiz />, path: '/decks', roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
     { text: 'User Management', icon: <Dashboard />, path: '/users', roles: ['ADMIN'] },
     { text: 'Analytics', icon: <Dashboard />, path: '/analytics', roles: ['ADMIN', 'TEACHER'] },
   ];
