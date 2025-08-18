@@ -1,0 +1,2 @@
+PS D:\XProject\Xmicro1\assignment-service> ..\.venv\Scripts\Activate.ps1
+PS D:\XProject\Xmicro1\assignment-service> python main.py

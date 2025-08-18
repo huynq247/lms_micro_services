@@ -1,0 +1,25 @@
+ Auth Service (Port 8001)
+cd d:\XProject\Xmicro1
+.venv\Scripts\activate
+cd auth-service
+uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+
+Content Service (Port 8002)
+
+cd d:\XProject\Xmicro1
+.venv\Scripts\activate
+cd content-service
+uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
+
+
+Assignment Service (Port 8004)
+cd d:\XProject\Xmicro1
+.venv\Scripts\activate
+cd assignment-service
+uvicorn app.main:app --host 0.0.0.0 --port 8004 --reload
+
+
+cd d:\XProject\Xmicro1
+.venv\Scripts\activate
+cd api-gateway
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
