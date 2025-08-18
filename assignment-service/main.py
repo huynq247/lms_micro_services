@@ -95,16 +95,28 @@ async def root():
         }
     }
 
-# TODO: Include routers when they are created
-# from app.api.assignments import router as assignments_router
-# from app.api.progress import router as progress_router
-# from app.api.sessions import router as sessions_router
-# from app.api.analytics import router as analytics_router
+# Include API routers
+from app.api.analytics import router as analytics_router
 
-# app.include_router(assignments_router, prefix="/api/v1")
-# app.include_router(progress_router, prefix="/api/v1")
-# app.include_router(sessions_router, prefix="/api/v1")
-# app.include_router(analytics_router, prefix="/api/v1")
+try:
+    from app.api.assignments import router as assignments_router
+    app.include_router(assignments_router, prefix="/api")
+except ImportError:
+    logger.warning("Assignments router not available")
+
+try:
+    from app.api.progress import router as progress_router
+    app.include_router(progress_router, prefix="/api")
+except ImportError:
+    logger.warning("Progress router not available")
+
+try:
+    from app.api.sessions import router as sessions_router
+    app.include_router(sessions_router, prefix="/api")
+except ImportError:
+    logger.warning("Sessions router not available")
+
+app.include_router(analytics_router, prefix="/api")
 
 if __name__ == "__main__":
     uvicorn.run(

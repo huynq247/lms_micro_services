@@ -213,6 +213,16 @@ class AssignmentCRUD:
         """Get assignments by student"""
         filters = AssignmentFilter(student_id=student_id)
         return await self.get_assignments(filters, pagination)
+    
+    async def count_all(self, db: AsyncSession) -> int:
+        """Count total number of assignments"""
+        try:
+            stmt = select(func.count(Assignment.id)).where(Assignment.is_active == True)
+            result = await db.execute(stmt)
+            return result.scalar() or 0
+        except Exception as e:
+            logger.error(f"Error counting assignments: {e}")
+            return 0
 
 
 class ProgressCRUD:

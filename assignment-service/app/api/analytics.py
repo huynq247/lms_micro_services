@@ -8,6 +8,38 @@ from app.utils.crud import AssignmentCRUD, ProgressCRUD, StudySessionCRUD
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
 
+@router.get("/summary")
+async def get_analytics_summary(
+    db: AsyncSession = Depends(get_database)
+):
+    """Get general analytics summary"""
+    try:
+        assignment_crud = AssignmentCRUD(db)
+        progress_crud = ProgressCRUD(db)
+        
+        # Get basic stats
+        total_assignments = await assignment_crud.count_all(db)
+        
+        return {
+            "status": "success",
+            "total_assignments": total_assignments,
+            "total_students": 0,  # TODO: implement when user service is available
+            "total_instructors": 0,  # TODO: implement when user service is available
+            "completion_rate": 0.0,  # TODO: implement when progress tracking is complete
+            "message": "Analytics summary data"
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error fetching analytics summary: {str(e)}",
+            "total_assignments": 0,
+            "total_students": 0,
+            "total_instructors": 0,
+            "completion_rate": 0.0
+        }
+
+
 @router.get("/instructors/{instructor_id}/dashboard")
 async def get_instructor_dashboard(
     instructor_id: int,

@@ -19,7 +19,13 @@ app = FastAPI(
     
     ## Available Services:
     
-    ### 📚 Assignment Service (`/api/assignments/*`)
+    ### � Auth Service (`/api/v1/auth/*`)
+    - Manages user authentication and authorization
+    - Endpoints: login, register, profile, logout
+    - Database: PostgreSQL
+    - Port: 8001
+    
+    ### �📚 Assignment Service (`/api/assignments/*`)
     - Manages assignments, user progress, and study sessions
     - Endpoints: assignments, users, progress, analytics
     - Database: PostgreSQL
@@ -57,28 +63,35 @@ app = FastAPI(
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001", "*"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
 # Service URLs - update these if services run on different ports
+AUTH_SERVICE_URL = "http://localhost:8001"
 ASSIGNMENT_SERVICE_URL = "http://localhost:8004"
 CONTENT_SERVICE_URL = "http://localhost:8002"
 
 async def forward_request(url: str, method: str, headers: dict, params: dict = None, json_data: Any = None):
     """Forward request to target service"""
+    # Filter out problematic headers
+    filtered_headers = {
+        k: v for k, v in headers.items() 
+        if k.lower() not in ['content-length', 'host', 'connection', 'transfer-encoding']
+    }
+    
     async with httpx.AsyncClient(timeout=30.0) as client:
         try:
             if method == "GET":
-                response = await client.get(url, headers=headers, params=params)
+                response = await client.get(url, headers=filtered_headers, params=params)
             elif method == "POST":
-                response = await client.post(url, headers=headers, params=params, json=json_data)
+                response = await client.post(url, headers=filtered_headers, params=params, json=json_data)
             elif method == "PUT":
-                response = await client.put(url, headers=headers, params=params, json=json_data)
+                response = await client.put(url, headers=filtered_headers, params=params, json=json_data)
             elif method == "DELETE":
-                response = await client.delete(url, headers=headers, params=params)
+                response = await client.delete(url, headers=filtered_headers, params=params)
             else:
                 raise HTTPException(status_code=405, detail="Method not allowed")
             
@@ -91,6 +104,15 @@ async def forward_request(url: str, method: str, headers: dict, params: dict = N
             raise HTTPException(status_code=503, detail=f"Service unavailable: {url}")
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Gateway error: {str(e)}")
+
+def get_json_data_safely(request: Request):
+    """Safely get JSON data from request based on method and content type"""
+    if request.method in ["POST", "PUT", "PATCH"] and request.headers.get("content-type") == "application/json":
+        try:
+            return request.json()
+        except:
+            return None
+    return None
 
 @app.get("/")
 async def gateway_info():
@@ -106,15 +128,18 @@ async def gateway_info():
             "openapi_json": "/openapi.json"
         },
         "services": {
+            "auth_service": AUTH_SERVICE_URL,
             "assignment_service": ASSIGNMENT_SERVICE_URL,
             "content_service": CONTENT_SERVICE_URL
         },
         "available_endpoints": {
+            "auth": "/api/v1/auth/*",
             "assignments": "/api/assignments/",
             "courses": "/api/courses/*",
             "decks": "/api/decks/*",
             "health": "/health",
             "status": {
+                "auth": "/api/v1/auth/profile",
                 "assignments": "/api/assignments/status",
                 "courses": "/api/courses/status"
             }
@@ -131,6 +156,14 @@ async def gateway_info():
 async def health_check():
     """Aggregate health check"""
     health_status = {"gateway": "healthy", "services": {}}
+    
+    # Check Auth Service
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(f"{AUTH_SERVICE_URL}/health")
+            health_status["services"]["auth_service"] = "healthy" if response.status_code == 200 else "unhealthy"
+    except:
+        health_status["services"]["auth_service"] = "unavailable"
     
     # Check Assignment Service
     try:
@@ -149,6 +182,80 @@ async def health_check():
         health_status["services"]["content_service"] = "unavailable"
     
     return health_status
+
+# Auth Service Routes
+@app.api_route("/api/v1/auth/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def route_auth(request: Request, path: str):
+    """Route auth requests"""
+    url = f"{AUTH_SERVICE_URL}/api/v1/auth/{path}"
+    json_data = await get_json_data_safely(request)
+    
+    result = await forward_request(
+        url=url,
+        method=request.method,
+        headers=dict(request.headers),
+        params=dict(request.query_params),
+        json_data=json_data
+    )
+    
+    return JSONResponse(
+        content=result["content"],
+        status_code=result["status_code"]
+    )
+
+# Users Service Routes (part of Auth Service)
+@app.api_route("/api/v1/users/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def route_users_with_path(request: Request, path: str):
+    """Route users requests with path to Auth Service"""
+    url = f"{AUTH_SERVICE_URL}/api/v1/users/{path}"
+    
+    # Only try to parse JSON for methods that might have a body
+    json_data = None
+    if request.method in ["POST", "PUT", "PATCH"] and request.headers.get("content-type") == "application/json":
+        try:
+            json_data = await request.json()
+        except:
+            json_data = None
+    
+    result = await forward_request(
+        url=url,
+        method=request.method,
+        headers=dict(request.headers),
+        params=dict(request.query_params),
+        json_data=json_data
+    )
+    
+    return JSONResponse(
+        content=result["content"],
+        status_code=result["status_code"]
+    )
+
+@app.api_route("/api/v1/users/", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route("/api/v1/users", methods=["GET", "POST", "PUT", "DELETE"])
+async def route_users_root(request: Request):
+    """Route users root requests to Auth Service (with and without trailing slash)"""
+    url = f"{AUTH_SERVICE_URL}/api/v1/users/"
+    
+    # Only try to parse JSON for methods that might have a body
+    json_data = None
+    if request.method in ["POST", "PUT", "PATCH"] and request.headers.get("content-type") == "application/json":
+        try:
+            json_data = await request.json()
+        except:
+            json_data = None
+    
+    result = await forward_request(
+        url=url,
+        method=request.method,
+        headers=dict(request.headers),
+        params=dict(request.query_params),
+        json_data=json_data
+    )
+    
+    return JSONResponse(
+        content=result["content"],
+        status_code=result["status_code"]
+    )
 
 # Assignment Service Routes
 @app.api_route("/api/assignments/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
@@ -260,9 +367,11 @@ async def route_decks(request: Request, path: str):
 if __name__ == "__main__":
     import uvicorn
     print("🌐 Starting API Gateway on http://localhost:8000")
-    print("📚 Assignment Service: http://localhost:8004")
+    print("� Auth Service: http://localhost:8001")
+    print("�📚 Assignment Service: http://localhost:8004")
     print("📖 Content Service: http://localhost:8002")
     print("🔗 Gateway Routes:")
+    print("  - /api/v1/auth/* → Auth Service")
     print("  - /api/assignments/* → Assignment Service")
     print("  - /api/courses/* → Content Service")
     uvicorn.run(app, host="0.0.0.0", port=8000)
