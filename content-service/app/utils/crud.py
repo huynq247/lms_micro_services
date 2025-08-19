@@ -420,12 +420,33 @@ class FlashcardCRUD:
     async def get_flashcards_by_deck(self, deck_id: str) -> List[Flashcard]:
         """Get all flashcards for a deck, ordered by order field"""
         try:
-            cursor = self.collection.find({
-                "deck_id": ObjectId(deck_id),
-                "is_active": True
-            }).sort("order", 1)
+            logger.info(f"Getting flashcards for deck_id: {deck_id}")
             
-            flashcards_data = await cursor.to_list(length=None)
+            # Convert deck_id to ObjectId since that's how it's stored in database
+            try:
+                deck_object_id = ObjectId(deck_id)
+                cursor = self.collection.find({
+                    "deck_id": deck_object_id,
+                    "is_active": True
+                }).sort("order", 1)
+                
+                flashcards_data = await cursor.to_list(length=None)
+                logger.info(f"Found {len(flashcards_data)} flashcards with ObjectId deck_id")
+                
+            except Exception as oid_error:
+                logger.warning(f"Invalid ObjectId format for {deck_id}: {oid_error}")
+                flashcards_data = []
+            
+            # If still no results, try with string deck_id for backwards compatibility
+            if not flashcards_data:
+                logger.info("Trying with string deck_id for backwards compatibility")
+                cursor = self.collection.find({
+                    "deck_id": deck_id,
+                    "is_active": True
+                }).sort("order", 1)
+                flashcards_data = await cursor.to_list(length=None)
+                logger.info(f"Found {len(flashcards_data)} flashcards with string deck_id")
+            
             return [Flashcard(**flashcard_data) for flashcard_data in flashcards_data]
         except Exception as e:
             logger.error(f"Error getting flashcards for deck {deck_id}: {e}")

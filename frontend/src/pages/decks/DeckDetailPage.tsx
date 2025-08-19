@@ -57,11 +57,19 @@ const DeckDetailPage: React.FC = () => {
     enabled: !!deckId,
   });
 
+  // Fetch flashcards for this deck
+  const { data: flashcardsData, isLoading: isLoadingFlashcards } = useQuery({
+    queryKey: ['flashcards', deckId],
+    queryFn: () => contentService.getFlashcards(deckId!),
+    enabled: !!deckId,
+  });
+
   // Create flashcard mutation
   const createFlashcardMutation = useMutation({
     mutationFn: contentService.createFlashcard,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deck', deckId] });
+      queryClient.invalidateQueries({ queryKey: ['flashcards', deckId] });
       setOpenCreateDialog(false);
       setEditingCard(null);
       reset();
@@ -77,6 +85,7 @@ const DeckDetailPage: React.FC = () => {
     mutationFn: (cardId: string) => contentService.deleteFlashcard(cardId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['deck', deckId] });
+      queryClient.invalidateQueries({ queryKey: ['flashcards', deckId] });
     },
   });
 
@@ -84,16 +93,18 @@ const DeckDetailPage: React.FC = () => {
     const flashcardData = {
       ...data,
       deck_id: deckId!,
+      order: data.order || (flashcardsData?.flashcards?.length || 0) + 1, // Auto set order if not provided
     };
     createFlashcardMutation.mutate(flashcardData);
   };
 
   const handleEditFlashcard = (card: Flashcard) => {
     setEditingCard(card);
-    setValue('front_content', card.front_content);
-    setValue('back_content', card.back_content);
+    setValue('front', card.front);
+    setValue('back', card.back);
     setValue('difficulty', card.difficulty);
     setValue('deck_id', card.deck_id);
+    setValue('order', card.order);
     setOpenCreateDialog(true);
   };
 
@@ -267,31 +278,94 @@ const DeckDetailPage: React.FC = () => {
       <Typography variant="h5" component="h2" gutterBottom>
         Flashcards
       </Typography>
-      
-      {/* Flashcards Grid - Currently API doesn't return flashcards data */}
-      {/* TODO: Implement flashcards API endpoint to display actual flashcards */}
+      {/* Flashcards Grid */}
       <Box
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' },
-          gap: 3
+          gap: 3,
+          mb: 4
         }}
       >
-        {/* No flashcards data from API - show empty state */}
+        {flashcardsData?.flashcards?.map((flashcard) => (
+          <Card 
+            key={flashcard.id}
+            sx={{ 
+              cursor: 'pointer',
+              transition: 'transform 0.2s',
+              '&:hover': { transform: 'scale(1.02)' }
+            }}
+          >
+            <CardContent 
+              onClick={() => handleFlipCard(flashcard.id)}
+              sx={{ minHeight: 150, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+            >
+              <Typography variant="body1" align="center">
+                {flippedCards.has(flashcard.id) ? flashcard.back : flashcard.front}
+              </Typography>
+              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Chip 
+                  label={flashcard.difficulty || 'medium'} 
+                  size="small" 
+                  color={getDifficultyColor(flashcard.difficulty)}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  {flippedCards.has(flashcard.id) ? 'Back' : 'Front'}
+                </Typography>
+              </Box>
+            </CardContent>
+            <RoleBasedComponent allowedRoles={['TEACHER', 'ADMIN']}>
+              <CardActions>
+                <Button
+                  size="small"
+                  startIcon={<Edit />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditFlashcard(flashcard);
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="small"
+                  startIcon={<Delete />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteFlashcard(flashcard.id);
+                  }}
+                  color="error"
+                >
+                  Delete
+                </Button>
+              </CardActions>
+            </RoleBasedComponent>
+          </Card>
+        ))}
       </Box>
 
-      {/* Empty State - Always show since API doesn't return flashcards */}
-      <Box textAlign="center" mt={6}>
-        <Quiz sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-        <Typography variant="h6" gutterBottom>
-          Flashcards Feature Coming Soon
-        </Typography>
-        <Typography variant="body2" color="text.secondary" paragraph>
-          The flashcards API is not yet implemented. You can create and manage decks, but individual flashcards will be available in a future update.
-        </Typography>
-      </Box>
+      {/* Empty State */}
+      {(!isLoadingFlashcards && (!flashcardsData?.flashcards || flashcardsData.flashcards.length === 0)) && (
+        <Box textAlign="center" mt={6}>
+          <Quiz sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6" gutterBottom>
+            No Flashcards Yet
+          </Typography>
+          <Typography variant="body2" color="text.secondary" paragraph>
+            Add flashcards to this deck to start studying!
+          </Typography>
+          <RoleBasedComponent allowedRoles={['TEACHER', 'ADMIN']}>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => setOpenCreateDialog(true)}
+            >
+              Add Your First Flashcard
+            </Button>
+          </RoleBasedComponent>
+        </Box>
+      )}
 
-      {/* Create/Edit Flashcard Dialog - Disabled since API not implemented */}
+      {/* Create/Edit Flashcard Dialog */}
       <Dialog open={openCreateDialog} onClose={closeDialog} maxWidth="md" fullWidth>
         <form onSubmit={handleSubmit(handleCreateFlashcard)}>
           <DialogTitle>
@@ -312,9 +386,9 @@ const DeckDetailPage: React.FC = () => {
               multiline
               rows={3}
               variant="outlined"
-              {...register('front_content', { required: 'Front content is required' })}
-              error={!!errors.front_content}
-              helperText={errors.front_content?.message}
+              {...register('front', { required: 'Front content is required' })}
+              error={!!errors.front}
+              helperText={errors.front?.message}
               sx={{ mb: 2 }}
             />
             
@@ -325,9 +399,9 @@ const DeckDetailPage: React.FC = () => {
               multiline
               rows={3}
               variant="outlined"
-              {...register('back_content', { required: 'Back content is required' })}
-              error={!!errors.back_content}
-              helperText={errors.back_content?.message}
+              {...register('back', { required: 'Back content is required' })}
+              error={!!errors.back}
+              helperText={errors.back?.message}
               sx={{ mb: 2 }}
             />
             
@@ -349,6 +423,22 @@ const DeckDetailPage: React.FC = () => {
               <option value="medium">Medium</option>
               <option value="hard">Hard</option>
             </TextField>
+            
+            <TextField
+              margin="dense"
+              label="Order"
+              type="number"
+              fullWidth
+              variant="outlined"
+              {...register('order', { 
+                required: 'Order is required',
+                valueAsNumber: true,
+                min: { value: 1, message: 'Order must be at least 1' }
+              })}
+              error={!!errors.order}
+              helperText={errors.order?.message}
+              sx={{ mb: 2 }}
+            />
           </DialogContent>
           <DialogActions>
             <Button onClick={closeDialog}>Cancel</Button>

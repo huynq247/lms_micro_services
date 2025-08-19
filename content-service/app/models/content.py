@@ -178,6 +178,11 @@ class Flashcard(BaseModel):
     # Learning metadata
     difficulty: Optional[str] = Field(None, pattern="^(easy|medium|hard)$")
     
+    # NEW VOCABULARY FIELDS (Optional)
+    wordclass: Optional[str] = Field(None, max_length=50, description="Word class (noun, verb, adjective, etc.)")
+    definition: Optional[str] = Field(None, max_length=2000, description="Detailed definition of the word/concept")
+    example: Optional[str] = Field(None, max_length=1000, description="Usage example or sentence")
+    
     # Status
     is_active: bool = Field(default=True)
     

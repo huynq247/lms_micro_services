@@ -26,6 +26,7 @@ import { useNavigate } from 'react-router-dom';
 import { contentService, Deck, CreateDeckRequest } from '../../services/content.service';
 import { RoleBasedComponent } from '../../components/common/RoleBasedComponent';
 import { useAuth } from '../../context/AuthContext';
+import { GlassContainer, GradientText } from '../../components/common/GlassContainer';
 
 const DecksPage: React.FC = () => {
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
@@ -104,9 +105,11 @@ const DecksPage: React.FC = () => {
   if (isLoading) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Loading Decks...
-        </Typography>
+        <GlassContainer>
+          <GradientText variant="primary" component="h1" sx={{ fontSize: '2rem', mb: 2 }}>
+            Loading Your Decks...
+          </GradientText>
+        </GlassContainer>
       </Container>
     );
   }
@@ -114,26 +117,35 @@ const DecksPage: React.FC = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Box>
-          <Typography variant="h4" component="h1" gutterBottom>
-            📚 Flashcard Decks
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Study with flashcards and improve your knowledge
-          </Typography>
+      <GlassContainer sx={{ mb: 4 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box>
+            <GradientText variant="primary" component="h1" sx={{ fontSize: '2.5rem', mb: 1 }}>
+              🃏 Flashcard Decks
+            </GradientText>
+            <Typography variant="body1" color="text.secondary">
+              Create, manage, and study your flashcard collections
+            </Typography>
+          </Box>
+          <RoleBasedComponent allowedRoles={['TEACHER', 'ADMIN']}>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => setOpenCreateDialog(true)}
+              size="large"
+              sx={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                  transform: 'translateY(-2px)',
+                },
+              }}
+            >
+              Create Deck
+            </Button>
+          </RoleBasedComponent>
         </Box>
-        <RoleBasedComponent allowedRoles={['TEACHER', 'ADMIN']}>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => setOpenCreateDialog(true)}
-            sx={{ ml: 2 }}
-          >
-            Create Deck
-          </Button>
-        </RoleBasedComponent>
-      </Box>
+      </GlassContainer>
 
       {/* Stats */}
       <Box

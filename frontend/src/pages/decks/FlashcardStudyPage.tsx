@@ -314,7 +314,7 @@ const FlashcardStudyPage: React.FC = () => {
                   Question
                 </Typography>
                 <Typography variant="h5" sx={{ fontWeight: 500 }}>
-                  {currentCard.front_content}
+                  {currentCard.front}
                 </Typography>
               </>
             ) : (
@@ -324,7 +324,7 @@ const FlashcardStudyPage: React.FC = () => {
                   Answer
                 </Typography>
                 <Typography variant="h5" sx={{ fontWeight: 500 }}>
-                  {currentCard.back_content}
+                  {currentCard.back}
                 </Typography>
               </>
             )}

@@ -131,6 +131,11 @@ class FlashcardBase(BaseModel):
     front_image_url: Optional[str] = None
     back_image_url: Optional[str] = None
     difficulty: Optional[str] = Field(None, pattern="^(easy|medium|hard)$")
+    
+    # NEW VOCABULARY FIELDS (Optional)
+    wordclass: Optional[str] = Field(None, max_length=50, description="Word class (noun, verb, adjective, etc.)")
+    definition: Optional[str] = Field(None, max_length=2000, description="Detailed definition of the word/concept")
+    example: Optional[str] = Field(None, max_length=1000, description="Usage example or sentence")
 
     @validator('front_image_url', 'back_image_url')
     def validate_image_urls(cls, v):
@@ -149,6 +154,11 @@ class FlashcardUpdate(BaseModel):
     back_image_url: Optional[str] = None
     difficulty: Optional[str] = Field(None, pattern="^(easy|medium|hard)$")
     is_active: Optional[bool] = None
+    
+    # NEW VOCABULARY FIELDS (Optional for updates)
+    wordclass: Optional[str] = Field(None, max_length=50, description="Word class (noun, verb, adjective, etc.)")
+    definition: Optional[str] = Field(None, max_length=2000, description="Detailed definition of the word/concept")
+    example: Optional[str] = Field(None, max_length=1000, description="Usage example or sentence")
 
     @validator('front_image_url', 'back_image_url')
     def validate_image_urls(cls, v):

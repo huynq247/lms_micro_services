@@ -8,7 +8,7 @@ from app.schemas.content import (
     FlashcardCreate, FlashcardUpdate, FlashcardResponse,
     ReorderRequest, PaginationParams, PaginatedResponse, MessageResponse
 )
-from app.utils.crud import DeckCRUD, FlashcardCRUD
+from app.crud import DeckCRUD, FlashcardCRUD
 
 router = APIRouter(prefix="/decks", tags=["Decks & Flashcards"])
 
@@ -32,6 +32,102 @@ async def create_deck(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error creating deck: {str(e)}"
         )
+
+@router.get("/debug/flashcards", response_model=List[dict])
+async def debug_flashcards(
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Debug endpoint to see all flashcards in database"""
+    cursor = db.flashcards.find({})
+    flashcards_data = await cursor.to_list(length=None)
+    # Convert ObjectId to string for JSON serialization
+    for flashcard in flashcards_data:
+        flashcard["_id"] = str(flashcard["_id"])
+        if "deck_id" in flashcard:
+            flashcard["deck_id"] = str(flashcard["deck_id"])
+    return flashcards_data
+
+@router.get("/debug/decks", response_model=List[dict])
+async def debug_decks(
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Debug endpoint to see all decks in database"""
+    cursor = db.decks.find({})
+    decks_data = await cursor.to_list(length=None)
+    # Convert ObjectId to string for JSON serialization
+    for deck in decks_data:
+        deck["_id"] = str(deck["_id"])
+        if "lesson_id" in deck:
+            deck["lesson_id"] = str(deck["lesson_id"])
+    return decks_data
+
+@router.get("/debug/deck/{deck_id}/flashcards")
+async def debug_deck_flashcards(
+    deck_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Debug endpoint to see flashcards for specific deck with different query methods"""
+    from bson import ObjectId
+    
+    # Try both ObjectId and string queries
+    result = {
+        "deck_id_searched": deck_id,
+        "flashcards_with_objectid": [],
+        "flashcards_with_string": [],
+        "all_flashcards": []
+    }
+    
+    # Query with ObjectId
+    try:
+        cursor = db.flashcards.find({"deck_id": ObjectId(deck_id)})
+        flashcards_data = await cursor.to_list(length=None)
+        for flashcard in flashcards_data:
+            flashcard["_id"] = str(flashcard["_id"])
+            flashcard["deck_id"] = str(flashcard["deck_id"])
+        result["flashcards_with_objectid"] = flashcards_data
+    except Exception as e:
+        result["objectid_error"] = str(e)
+    
+    # Query with string
+    try:
+        cursor = db.flashcards.find({"deck_id": deck_id})
+        flashcards_data = await cursor.to_list(length=None)
+        for flashcard in flashcards_data:
+            flashcard["_id"] = str(flashcard["_id"])
+            if "deck_id" in flashcard:
+                flashcard["deck_id"] = str(flashcard["deck_id"])
+        result["flashcards_with_string"] = flashcards_data
+    except Exception as e:
+        result["string_error"] = str(e)
+    
+    # Get all flashcards to see their deck_id format
+    try:
+        cursor = db.flashcards.find({})
+        flashcards_data = await cursor.to_list(length=None)
+        for flashcard in flashcards_data:
+            flashcard["_id"] = str(flashcard["_id"])
+            if "deck_id" in flashcard:
+                flashcard["deck_id"] = str(flashcard["deck_id"])
+        result["all_flashcards"] = flashcards_data
+    except Exception as e:
+        result["all_error"] = str(e)
+    
+    return result
+
+@router.get("/raw/{deck_id}/flashcards")
+async def get_raw_flashcards(
+    deck_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Raw flashcards without model conversion"""
+    from bson import ObjectId
+    cursor = db.flashcards.find({"deck_id": ObjectId(deck_id)})
+    flashcards_data = await cursor.to_list(length=None)
+    # Convert ObjectId to string for JSON serialization
+    for flashcard in flashcards_data:
+        flashcard["_id"] = str(flashcard["_id"])
+        flashcard["deck_id"] = str(flashcard["deck_id"])
+    return {"raw_count": len(flashcards_data), "flashcards": flashcards_data}
 
 @router.get("/{deck_id}", response_model=DeckResponse)
 async def get_deck(
@@ -171,19 +267,84 @@ async def get_flashcards_by_deck(
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """Get all flashcards for a deck"""
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"API: Getting flashcards for deck: {deck_id}")
+    
     # Verify deck exists
     deck_crud = DeckCRUD(db)
     deck = await deck_crud.get_deck(deck_id)
     if not deck:
+        logger.warning(f"API: Deck {deck_id} not found")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Deck not found"
         )
     
-    flashcard_crud = FlashcardCRUD(db)
-    flashcards = await flashcard_crud.get_flashcards_by_deck(deck_id)
+    logger.info(f"API: Deck found: {deck.title}")
     
-    return [FlashcardResponse(**flashcard.dict()) for flashcard in flashcards]
+    # Bypass CRUD and query database directly to avoid model conversion issues
+    from bson import ObjectId
+    cursor = db.flashcards.find({"deck_id": ObjectId(deck_id)}).sort("order", 1)
+    flashcards_data = await cursor.to_list(length=None)
+    
+    logger.info(f"API: Found {len(flashcards_data)} raw flashcards")
+    
+    # Convert raw data directly to FlashcardResponse
+    flashcard_responses = []
+    for flashcard_data in flashcards_data:
+        try:
+            # Convert ObjectId fields to strings
+            flashcard_data["id"] = str(flashcard_data.pop("_id"))
+            flashcard_data["deck_id"] = str(flashcard_data["deck_id"])
+            
+            # Ensure required fields exist with defaults
+            if "is_active" not in flashcard_data:
+                flashcard_data["is_active"] = True
+            if "front_image_valid" not in flashcard_data:
+                flashcard_data["front_image_valid"] = None
+            if "back_image_valid" not in flashcard_data:
+                flashcard_data["back_image_valid"] = None
+            if "last_url_check" not in flashcard_data:
+                flashcard_data["last_url_check"] = None
+            if "updated_at" not in flashcard_data:
+                flashcard_data["updated_at"] = None
+            
+            # NEW VOCABULARY FIELDS (with defaults for existing flashcards)
+            if "wordclass" not in flashcard_data:
+                flashcard_data["wordclass"] = None
+            if "definition" not in flashcard_data:
+                flashcard_data["definition"] = None
+            if "example" not in flashcard_data:
+                flashcard_data["example"] = None
+            
+            # Convert date strings to datetime objects if needed for validation
+            if "created_at" in flashcard_data and isinstance(flashcard_data["created_at"], str):
+                from datetime import datetime
+                flashcard_data["created_at"] = datetime.fromisoformat(flashcard_data["created_at"].replace('Z', '+00:00'))
+            
+            flashcard_response = FlashcardResponse(**flashcard_data)
+            flashcard_responses.append(flashcard_response)
+        except Exception as e:
+            logger.error(f"Error converting flashcard data to response: {e}")
+            logger.error(f"Problematic data: {flashcard_data}")
+    
+    logger.info(f"API: Successfully converted {len(flashcard_responses)} flashcards")
+    return flashcard_responses
+
+@router.get("/debug/flashcards", response_model=List[dict])
+async def debug_flashcards(
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Debug endpoint to see all flashcards in database"""
+    cursor = db.flashcards.find({})
+    flashcards_data = await cursor.to_list(length=None)
+    # Convert ObjectId to string for JSON serialization
+    for flashcard in flashcards_data:
+        flashcard["_id"] = str(flashcard["_id"])
+        if "deck_id" in flashcard:
+            flashcard["deck_id"] = str(flashcard["deck_id"])
+    return flashcards_data
 
 @router.get("/flashcards/{flashcard_id}", response_model=FlashcardResponse)
 async def get_flashcard(

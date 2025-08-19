@@ -8,7 +8,7 @@ from app.schemas.content import (
     LessonCreate, LessonUpdate, LessonResponse,
     ReorderRequest, PaginationParams, PaginatedResponse, MessageResponse
 )
-from app.utils.crud import CourseCRUD, LessonCRUD
+from app.crud import CourseCRUD, LessonCRUD
 from app.utils.url_validator import url_validator
 
 router = APIRouter(prefix="/courses", tags=["Courses"])

@@ -21,6 +21,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { contentService, CreateCourseRequest } from '../../services/content.service';
 import { useAuth } from '../../context/AuthContext';
+import { GlassContainer, GradientText } from '../../components/common/GlassContainer';
 
 const CoursesPage: React.FC = () => {
   const [open, setOpen] = useState(false);
@@ -77,82 +78,95 @@ const CoursesPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Courses
-        </Typography>
-        {(user?.role === 'instructor' || user?.role === 'admin') && (
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => setOpen(true)}
-          >
-            Create Course
-          </Button>
-        )}
-      </Box>
+      <GlassContainer sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <GradientText variant="primary" component={Typography} sx={{ variant: 'h4', component: 'h1' }}>
+            Courses
+          </GradientText>
+          {(user?.role === 'instructor' || user?.role === 'admin') && (
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => setOpen(true)}
+              sx={{ 
+                fontWeight: 700,
+                borderRadius: '14px',
+                px: 3,
+                py: 1.5
+              }}
+            >
+              Create Course
+            </Button>
+          )}
+        </Box>
+      </GlassContainer>
 
       {/* Courses Grid */}
       <Box sx={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', 
         gap: 3 
       }}>
         {coursesData?.courses?.map((course) => (
-          <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }} key={course.id}>
-            <CardContent sx={{ flexGrow: 1 }}>
+          <GlassContainer key={course.id} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ flexGrow: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <School sx={{ mr: 1, color: 'primary.main' }} />
-                <Typography variant="h6" component="h2">
+                <School sx={{ mr: 1.5, color: 'primary.main', fontSize: '1.5rem' }} />
+                <GradientText variant="primary" component={Typography} sx={{ variant: 'h6', component: 'h2', fontWeight: 700 }}>
                   {course.title}
-                </Typography>
+                </GradientText>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              <Typography variant="body1" color="text.primary" sx={{ mb: 3, fontWeight: 500, lineHeight: 1.6 }}>
                 {course.description}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+              <Box sx={{ display: 'flex', gap: 1.5, mb: 3 }}>
                 <Chip 
                   label={course.is_active ? 'Active' : 'Inactive'} 
-                  color={course.is_active ? 'success' : 'default'}
-                  size="small"
+                  color={course.is_active ? 'success' : 'warning'}
+                  size="medium"
+                  sx={{ fontWeight: 600 }}
                 />
                 <Chip 
                   label={`${course.lessons?.length || 0} Lessons`} 
                   variant="outlined"
-                  size="small"
+                  size="medium"
+                  sx={{ fontWeight: 600 }}
                 />
               </Box>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
                 Created: {new Date(course.created_at).toLocaleDateString()}
               </Typography>
-            </CardContent>
-            <CardActions>
-              <Button 
-                size="small" 
-                onClick={() => handleViewCourse(course.id)}
+            </Box>
+            <Box sx={{ mt: 3, display: 'flex', gap: 1.5 }}>
+              <Button
+                variant="contained"
+                onClick={() => navigate(`/courses/${course.id}`)}
+                sx={{ flex: 1, fontWeight: 600, borderRadius: '12px' }}
               >
-                View Course
+                View Details
               </Button>
               {(user?.role === 'instructor' || user?.role === 'admin') && (
-                <>
-                  <Button size="small" startIcon={<Edit />}>
-                    Edit
-                  </Button>
-                  <Button size="small" color="error" startIcon={<Delete />}>
-                    Delete
-                  </Button>
-                </>
+                <Button
+                  variant="outlined"
+                  startIcon={<Edit />}
+                  onClick={() => navigate(`/courses/${course.id}/edit`)}
+                  sx={{ fontWeight: 600, borderRadius: '12px' }}
+                >
+                  Edit
+                </Button>
               )}
-            </CardActions>
-          </Card>
-        )) || (
-          <Box sx={{ gridColumn: '1 / -1', textAlign: 'center', py: 4 }}>
-            <Typography color="text.secondary">
-              No courses available. Create your first course!
-            </Typography>
-          </Box>
-        )}
+            </Box>
+          </GlassContainer>
+        ))}
       </Box>
+
+      {coursesData?.courses?.length === 0 && (
+        <GlassContainer sx={{ textAlign: 'center', py: 4, mt: 4 }}>
+          <Typography color="text.secondary" sx={{ fontWeight: 500 }}>
+            No courses available. Create your first course!
+          </Typography>
+        </GlassContainer>
+      )}
 
       {/* Create Course Dialog */}
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>

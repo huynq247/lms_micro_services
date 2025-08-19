@@ -27,6 +27,7 @@ import { assignmentService, CreateAssignmentRequest } from '../../services/assig
 import { contentService } from '../../services/content.service';
 import { useAuth } from '../../context/AuthContext';
 import { RoleBasedComponent, useRolePermission } from '../../components/common/RoleBasedComponent';
+import { GlassContainer, GradientText } from '../../components/common/GlassContainer';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -154,90 +155,93 @@ const AssignmentsPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          Assignments
-        </Typography>
-        <RoleBasedComponent allowedRoles={['TEACHER', 'ADMIN']}>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => setOpen(true)}
-          >
-            Create Assignment
-          </Button>
-        </RoleBasedComponent>
-      </Box>
+      <GlassContainer sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <GradientText variant="primary" component={Typography} sx={{ variant: 'h4', component: 'h1' }}>
+            Assignments
+          </GradientText>
+          <RoleBasedComponent allowedRoles={['TEACHER', 'ADMIN']}>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => setOpen(true)}
+              sx={{ 
+                fontWeight: 700,
+                borderRadius: '14px',
+                px: 3,
+                py: 1.5
+              }}
+            >
+              Create Assignment
+            </Button>
+          </RoleBasedComponent>
+        </Box>
+      </GlassContainer>
 
       {/* Assignment Statistics */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 3, mb: 3 }}>
-        <Card>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Assignment sx={{ mr: 2, color: 'primary.main' }} />
-              <Box>
-                <Typography variant="h6">{assignmentsData?.total || 0}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total Assignments
-                </Typography>
-              </Box>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 3, mb: 4 }}>
+        <GlassContainer>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Assignment sx={{ mr: 2, color: 'primary.main', fontSize: '2rem' }} />
+            <Box>
+              <GradientText variant="primary" component={Typography} sx={{ fontSize: '2rem', fontWeight: 800 }}>
+                {assignmentsData?.total || 0}
+              </GradientText>
+              <Typography variant="body1" color="text.primary" sx={{ fontWeight: 600 }}>
+                Total Assignments
+              </Typography>
             </Box>
-          </CardContent>
-        </Card>
+          </Box>
+        </GlassContainer>
         
-        <Card>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <RadioButtonUnchecked sx={{ mr: 2, color: 'grey.500' }} />
-              <Box>
-                <Typography variant="h6">
-                  {assignmentsData?.assignments?.filter(a => a.status === 'not_started').length || 0}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Not Started
-                </Typography>
-              </Box>
+        <GlassContainer>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <RadioButtonUnchecked sx={{ mr: 2, color: 'warning.main', fontSize: '2rem' }} />
+            <Box>
+              <GradientText variant="warning" component={Typography} sx={{ fontSize: '2rem', fontWeight: 800 }}>
+                {assignmentsData?.assignments?.filter(a => a.status === 'not_started').length || 0}
+              </GradientText>
+              <Typography variant="body1" color="text.primary" sx={{ fontWeight: 600 }}>
+                Not Started
+              </Typography>
             </Box>
-          </CardContent>
-        </Card>
+          </Box>
+        </GlassContainer>
         
-        <Card>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Schedule sx={{ mr: 2, color: 'warning.main' }} />
-              <Box>
-                <Typography variant="h6">
-                  {assignmentsData?.assignments?.filter(a => a.status === 'in_progress').length || 0}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  In Progress
-                </Typography>
-              </Box>
+        <GlassContainer>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Schedule sx={{ mr: 2, color: 'warning.main', fontSize: '2rem' }} />
+            <Box>
+              <GradientText variant="warning" component={Typography} sx={{ fontSize: '2rem', fontWeight: 800 }}>
+                {assignmentsData?.assignments?.filter(a => a.status === 'in_progress').length || 0}
+              </GradientText>
+              <Typography variant="body1" color="text.primary" sx={{ fontWeight: 600 }}>
+                In Progress
+              </Typography>
             </Box>
-          </CardContent>
-        </Card>
+          </Box>
+        </GlassContainer>
         
-        <Card>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <CheckCircle sx={{ mr: 2, color: 'success.main' }} />
-              <Box>
-                <Typography variant="h6">
-                  {assignmentsData?.assignments?.filter(a => a.status === 'completed').length || 0}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Completed
-                </Typography>
-              </Box>
+        <GlassContainer>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <CheckCircle sx={{ mr: 2, color: 'success.main', fontSize: '2rem' }} />
+            <Box>
+              <GradientText variant="success" component={Typography} sx={{ fontSize: '2rem', fontWeight: 800 }}>
+                {assignmentsData?.assignments?.filter(a => a.status === 'completed').length || 0}
+              </GradientText>
+              <Typography variant="body1" color="text.primary" sx={{ fontWeight: 600 }}>
+                Completed
+              </Typography>
             </Box>
-          </CardContent>
-        </Card>
+          </Box>
+        </GlassContainer>
       </Box>
 
       {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label="All Assignments" />
+      <GlassContainer sx={{ mt: 4 }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={tabValue} onChange={handleTabChange}>
+            <Tab label="All Assignments" sx={{ fontWeight: 600 }} />
           <Tab label="Not Started" />
           <Tab label="In Progress" />
           <Tab label="Completed" />
@@ -327,6 +331,7 @@ const AssignmentsPage: React.FC = () => {
           )}
         </Box>
       </TabPanel>
+      </GlassContainer>
 
       {/* Create Assignment Dialog */}
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>

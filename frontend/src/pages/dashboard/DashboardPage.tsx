@@ -17,6 +17,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { contentService } from '../../services/content.service';
 import { assignmentService } from '../../services/assignment.service';
+import { GlassContainer, GradientText } from '../../components/common/GlassContainer';
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -110,52 +111,58 @@ const DashboardPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Typography variant="h4" component="h1" gutterBottom>
-        Dashboard
-      </Typography>
+      <GlassContainer sx={{ mb: 4 }}>
+        <GradientText variant="primary" component={Typography} sx={{ variant: 'h4', component: 'h1', gutterBottom: true }}>
+          Dashboard
+        </GradientText>
 
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Welcome back, {user?.full_name || user?.username}!
-        </Typography>
-        <Chip 
-          label={user?.role?.toUpperCase()} 
-          color="primary" 
-          variant="outlined"
-        />
-      </Box>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, color: '#1a202c' }}>
+            Welcome back, {user?.full_name || user?.username}!
+          </Typography>
+          <Chip 
+            label={user?.role?.toUpperCase()} 
+            color="primary" 
+            variant="filled"
+            sx={{ fontWeight: 600 }}
+          />
+        </Box>
+      </GlassContainer>
 
       {/* Stats Cards */}
       <Box sx={{ 
         display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
         gap: 3, 
         mb: 4 
       }}>
         {stats.map((stat, index) => (
-          <Card key={index}>
-            <CardContent>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Box>
-                  <Typography color="textSecondary" gutterBottom>
-                    {stat.title}
-                  </Typography>
-                  <Typography variant="h4" component="div">
-                    {stat.value}
-                  </Typography>
-                </Box>
-                <Box sx={{ color: `${stat.color}.main` }}>
-                  {stat.icon}
-                </Box>
+          <GlassContainer key={index} sx={{ height: '100%' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Box>
+                <Typography color="textSecondary" gutterBottom sx={{ fontWeight: 500 }}>
+                  {stat.title}
+                </Typography>
+                <GradientText variant={stat.color as any} component={Typography} 
+                  sx={{ fontSize: '2.5rem', fontWeight: 800, lineHeight: 1 }}>
+                  {stat.value}
+                </GradientText>
               </Box>
-            </CardContent>
-          </Card>
+              <Box sx={{ 
+                color: `${stat.color}.main`, 
+                opacity: 0.7,
+                fontSize: '2.5rem'
+              }}>
+                {stat.icon}
+              </Box>
+            </Box>
+          </GlassContainer>
         ))}
       </Box>
 
@@ -165,46 +172,48 @@ const DashboardPage: React.FC = () => {
         gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, 
         gap: 3 
       }}>
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Recent Courses
-            </Typography>
-            {coursesData?.courses?.slice(0, 5).map((course) => (
-              <Box key={course.id} sx={{ mb: 1 }}>
-                <Typography variant="body1">{course.title}</Typography>
-                <Typography variant="body2" color="textSecondary">
-                  {course.description}
-                </Typography>
-              </Box>
-            )) || <Typography>No courses available</Typography>}
-          </CardContent>
-        </Card>
+        <GlassContainer>
+          <GradientText variant="primary" component={Typography} sx={{ variant: 'h6', gutterBottom: true, mb: 3 }}>
+            Recent Courses
+          </GradientText>
+          {coursesData?.courses?.slice(0, 5).map((course) => (
+            <Box key={course.id} sx={{ mb: 2, p: 2, borderRadius: 2, backgroundColor: 'rgba(168, 184, 240, 0.1)' }}>
+              <Typography variant="body1" sx={{ fontWeight: 600, color: '#1a202c' }}>
+                {course.title}
+              </Typography>
+              <Typography variant="body2" color="textSecondary" sx={{ fontWeight: 500 }}>
+                {course.description}
+              </Typography>
+            </Box>
+          )) || <Typography sx={{ fontWeight: 500 }}>No courses available</Typography>}
+        </GlassContainer>
 
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Recent Assignments
-            </Typography>
-            {assignmentsData?.assignments?.slice(0, 5).map((assignment) => (
-              <Box key={assignment.id} sx={{ mb: 1 }}>
-                <Typography variant="body1">{assignment.title}</Typography>
-                <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                  <Chip 
-                    label={assignment.status} 
-                    size="small" 
-                    color={assignment.status === 'completed' ? 'success' : 'default'}
-                  />
-                  <Chip 
-                    label={assignment.content_type} 
-                    size="small" 
-                    variant="outlined"
-                  />
-                </Box>
+        <GlassContainer>
+          <GradientText variant="secondary" component={Typography} sx={{ variant: 'h6', gutterBottom: true, mb: 3 }}>
+            Recent Assignments
+          </GradientText>
+          {assignmentsData?.assignments?.slice(0, 5).map((assignment) => (
+            <Box key={assignment.id} sx={{ mb: 2, p: 2, borderRadius: 2, backgroundColor: 'rgba(245, 194, 231, 0.1)' }}>
+              <Typography variant="body1" sx={{ fontWeight: 600, color: '#1a202c' }}>
+                {assignment.title}
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                <Chip 
+                  label={assignment.status} 
+                  size="small" 
+                  color={assignment.status === 'completed' ? 'success' : 'warning'}
+                  sx={{ fontWeight: 600 }}
+                />
+                <Chip 
+                  label={assignment.content_type} 
+                  size="small" 
+                  variant="outlined"
+                  sx={{ fontWeight: 600 }}
+                />
               </Box>
-            )) || <Typography>No assignments available</Typography>}
-          </CardContent>
-        </Card>
+            </Box>
+          )) || <Typography sx={{ fontWeight: 500 }}>No assignments available</Typography>}
+        </GlassContainer>
       </Box>
     </Container>
   );

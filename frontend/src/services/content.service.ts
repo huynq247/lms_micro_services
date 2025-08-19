@@ -41,9 +41,13 @@ export interface Deck {
 export interface Flashcard {
   id: string;
   deck_id: string;
-  front_content: string;
-  back_content: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  front: string;
+  back: string;
+  order: number;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  front_image_url?: string;
+  back_image_url?: string;
+  is_active?: boolean;
   created_at: string;
   updated_at?: string;
 }
@@ -71,9 +75,12 @@ export interface CreateDeckRequest {
 
 export interface CreateFlashcardRequest {
   deck_id: string;
-  front_content: string;
-  back_content: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  front: string;
+  back: string;
+  order: number;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  front_image_url?: string;
+  back_image_url?: string;
 }
 
 export const contentService = {
@@ -157,16 +164,16 @@ export const contentService = {
   },
 
   createFlashcard: async (flashcardData: CreateFlashcardRequest): Promise<Flashcard> => {
-    const response = await apiClient.post('/api/flashcards/', flashcardData);
+    const response = await apiClient.post(`/api/decks/${flashcardData.deck_id}/flashcards`, flashcardData);
     return response.data;
   },
 
   updateFlashcard: async (flashcardId: string, flashcardData: Partial<CreateFlashcardRequest>): Promise<Flashcard> => {
-    const response = await apiClient.put(`/api/flashcards/${flashcardId}`, flashcardData);
+    const response = await apiClient.put(`/api/decks/flashcards/${flashcardId}`, flashcardData);
     return response.data;
   },
 
   deleteFlashcard: async (flashcardId: string): Promise<void> => {
-    await apiClient.delete(`/api/flashcards/${flashcardId}`);
+    await apiClient.delete(`/api/decks/flashcards/${flashcardId}`);
   },
 };

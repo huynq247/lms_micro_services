@@ -1,9 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { modernTheme } from './theme/modernTheme';
 
 // Pages
 import LoginPage from './pages/auth/LoginPage';
@@ -21,17 +22,6 @@ import FlashcardStudyPage from './pages/decks/FlashcardStudyPage';
 
 // Layout
 import Layout from './components/layout/Layout';
-
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,7 +56,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={modernTheme}>
       <CssBaseline />
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
