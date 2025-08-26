@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 from bson import ObjectId
 from datetime import datetime
 from app.models.content import Flashcard, PyObjectId
-from app.schemas.content import (
+from app.schemas.flashcard import (
     FlashcardCreate, FlashcardUpdate
 )
 import logging

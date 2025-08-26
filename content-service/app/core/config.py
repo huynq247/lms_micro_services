@@ -16,13 +16,22 @@ class Settings(BaseSettings):
     allowed_hosts: List[str] = ["*"]
     
     # MongoDB configuration
-    mongodb_url: str = "mongodb://admin:Mypassword123@113.161.118.17:27017/content_db?authSource=admin"
+    mongodb_url: str = "mongodb://admin:Mypassword123@113.161.118.17:27017/content_db?authSource=admin&serverSelectionTimeoutMS=5000&connectTimeoutMS=10000&socketTimeoutMS=10000"
     mongodb_db_name: str = "content_db"
     
     # Auth Service integration
     auth_service_url: str = "http://localhost:8001"
-    jwt_secret_key: str = "your-super-secret-jwt-key-content-service-2024"
+    jwt_secret_key: str = "microservices-lms-secret-key-2025-production-secure-auth-service"
     jwt_algorithm: str = "HS256"
+    
+    class Config:
+        env_file = ".env"
+        
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        print(f"🔧 Content-service config loaded:")
+        print(f"🔧 jwt_secret_key: {self.jwt_secret_key[:20]}...")
+        print(f"🔧 jwt_algorithm: {self.jwt_algorithm}")
     
     # URL validation settings
     max_image_size_mb: int = 10

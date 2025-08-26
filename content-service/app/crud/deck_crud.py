@@ -3,7 +3,7 @@ from typing import List, Optional, Dict, Any
 from bson import ObjectId
 from datetime import datetime
 from app.models.content import Deck, PyObjectId
-from app.schemas.content import (
+from app.schemas.deck import (
     DeckCreate, DeckUpdate
 )
 import logging
@@ -17,12 +17,16 @@ class DeckCRUD:
         self.db = database
         self.collection = database.decks
     
-    async def create_deck(self, deck_data: DeckCreate) -> Deck:
+    async def create_deck(self, deck_data: DeckCreate, instructor_name: str) -> Deck:
         """Create a new deck"""
         deck_dict = deck_data.dict()
-        deck_dict["lesson_id"] = ObjectId(deck_dict["lesson_id"])
+        # Remove lesson_id requirement for now - decks can be standalone
+        # deck_dict["lesson_id"] = ObjectId(deck_dict["lesson_id"]) if deck_dict.get("lesson_id") else None
+        deck_dict["instructor_name"] = instructor_name
         deck_dict["created_at"] = datetime.utcnow()
+        deck_dict["updated_at"] = datetime.utcnow()
         deck_dict["flashcard_count"] = 0  # Initialize count
+        deck_dict["is_active"] = True
         
         result = await self.collection.insert_one(deck_dict)
         deck_dict["_id"] = result.inserted_id
@@ -34,6 +38,15 @@ class DeckCRUD:
         try:
             deck_data = await self.collection.find_one({"_id": ObjectId(deck_id)})
             if deck_data:
+                # Count flashcards for this deck
+                flashcard_count = await self.db.flashcards.count_documents({
+                    "deck_id": ObjectId(deck_id),
+                    "is_active": True
+                })
+                
+                # Add total_flashcards to deck data
+                deck_data["total_flashcards"] = flashcard_count
+                
                 return Deck(**deck_data)
             return None
         except Exception as e:
@@ -43,28 +56,53 @@ class DeckCRUD:
     async def get_decks(self, pagination: Dict[str, Any], filters: Dict[str, Any]) -> Dict[str, Any]:
         """Get decks with pagination and filters"""
         try:
-            # Build query
-            query = {"is_active": True}
+            # Build base query
+            query = {}
             
             # Apply filters
-            if filters.get("lesson_id"):
-                query["lesson_id"] = ObjectId(filters["lesson_id"])
-            if filters.get("course_id"):
+            if filters.is_active is not None:
+                query["is_active"] = filters.is_active
+            if filters.is_published is not None:
+                query["is_published"] = filters.is_published
+            if filters.lesson_id:
+                query["lesson_id"] = ObjectId(filters.lesson_id)
+            if filters.course_id:
                 # Get lessons for this course first
                 lessons_cursor = self.db.lessons.find({
-                    "course_id": ObjectId(filters["course_id"]),
+                    "course_id": ObjectId(filters.course_id),
                     "is_active": True
                 })
                 lessons_data = await lessons_cursor.to_list(length=None)
                 lesson_ids = [lesson["_id"] for lesson in lessons_data]
                 query["lesson_id"] = {"$in": lesson_ids}
-            if filters.get("instructor_id"):
-                query["instructor_id"] = filters["instructor_id"]
-            if filters.get("search"):
+            if filters.instructor_id:
+                query["instructor_id"] = filters.instructor_id
+            if filters.category:
+                query["category"] = filters.category
+            if filters.tags:
+                query["tags"] = {"$in": filters.tags}
+            if filters.deck_ids and not filters.include_public:
+                # Only specific deck IDs (for assigned content without public access)
+                query["_id"] = {"$in": [ObjectId(deck_id) for deck_id in filters.deck_ids]}
+            elif filters.deck_ids and filters.include_public:
+                # Assigned deck IDs OR public decks (for students with assignments)
                 query["$or"] = [
-                    {"title": {"$regex": filters["search"], "$options": "i"}},
-                    {"description": {"$regex": filters["search"], "$options": "i"}}
+                    {"_id": {"$in": [ObjectId(deck_id) for deck_id in filters.deck_ids]}},
+                    {"is_published": True}
                 ]
+            elif filters.include_public and not filters.deck_ids:
+                # Only public decks (for students with no assignments)
+                query["is_published"] = True
+            if filters.search:
+                search_query = [
+                    {"title": {"$regex": filters.search, "$options": "i"}},
+                    {"description": {"$regex": filters.search, "$options": "i"}}
+                ]
+                if "$or" in query:
+                    # Combine with existing $or (for include_public)
+                    query = {"$and": [query, {"$or": search_query}]}
+                else:
+                    query["$or"] = search_query
             
             # Get total count
             total = await self.collection.count_documents(query)
@@ -73,14 +111,29 @@ class DeckCRUD:
             cursor = self.collection.find(query).sort("created_at", -1)
             
             # Apply pagination
-            page = pagination.get("page", 1)
-            limit = pagination.get("size", 20)  # Use 'size' instead of 'limit'
+            page = pagination.page if pagination.page else 1
+            limit = pagination.size if pagination.size else 20
             skip = (page - 1) * limit
             
             cursor = cursor.skip(skip).limit(limit)
             
             decks_data = await cursor.to_list(length=None)
-            decks = [Deck(**deck_data) for deck_data in decks_data]
+            
+            # Create deck objects and add flashcard counts
+            decks = []
+            for deck_data in decks_data:
+                # Count flashcards for this deck
+                flashcard_count = await self.db.flashcards.count_documents({
+                    "deck_id": deck_data["_id"],
+                    "is_active": True
+                })
+                
+                # Add total_flashcards to deck data
+                deck_data["total_flashcards"] = flashcard_count
+                
+                # Create Deck object
+                deck = Deck(**deck_data)
+                decks.append(deck)
             
             # Calculate pagination info
             total_pages = (total + limit - 1) // limit

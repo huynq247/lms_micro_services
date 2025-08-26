@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.schemas.user import User, UserCreate, UserUpdate, UserListResponse, MessageResponse
 from app.utils.crud import UserCRUD
 from app.models.user import UserRole
-from app.api.auth import get_admin_user
+from app.api.auth import get_admin_user, get_teacher_or_admin_user
 
 router = APIRouter(prefix="/users", tags=["User Management"])
 
@@ -32,6 +32,29 @@ async def get_users(
         "size": limit
     }
 
+
+@router.get("/my-students", response_model=UserListResponse)
+async def get_my_students(
+    skip: int = Query(0, ge=0, description="Number of users to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Number of users to return"),
+    current_user: User = Depends(get_teacher_or_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get students created by current teacher (Teacher/Admin only)"""
+    user_crud = UserCRUD(db)
+    users = user_crud.get_users_created_by(current_user.id, skip=skip, limit=limit)
+    
+    # Count total for pagination
+    total_students = len(user_crud.get_users_created_by(current_user.id))
+    
+    return {
+        "users": users,
+        "total": total_students,
+        "page": skip // limit + 1,  # Calculate page number
+        "size": limit
+    }
+
+
 @router.get("/{user_id}", response_model=User)
 async def get_user(
     user_id: int,
@@ -53,11 +76,18 @@ async def get_user(
 @router.post("/", response_model=User, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user: UserCreate,
-    admin_user: User = Depends(get_admin_user),
+    current_user: User = Depends(get_teacher_or_admin_user),
     db: Session = Depends(get_db)
 ):
-    """Create new user (Admin only)"""
+    """Create new user (Teacher/Admin only)"""
     user_crud = UserCRUD(db)
+    
+    # Teachers can only create STUDENT accounts - compare by value
+    if current_user.role == UserRole.TEACHER and user.role.value != UserRole.STUDENT.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Teachers can only create student accounts"
+        )
     
     # Check if username already exists
     if user_crud.is_username_taken(user.username):
@@ -75,7 +105,9 @@ async def create_user(
     
     # Create user
     try:
-        db_user = user_crud.create_user(user)
+        # Pass current user ID as created_by if they are teacher/admin
+        created_by_id = current_user.id if current_user.role in [UserRole.TEACHER, UserRole.ADMIN] else None
+        db_user = user_crud.create_user(user, created_by_user_id=created_by_id)
         return db_user
     except Exception as e:
         raise HTTPException(

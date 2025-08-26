@@ -31,7 +31,7 @@ app = FastAPI(
     - Database: PostgreSQL
     - Port: 8004
     
-    ### 📖 Content Service (`/api/courses/*`, `/api/decks/*`)
+    ### 📖 Content Service (`/api/courses/*`, `/api/lessons/*`, `/api/decks/*`, `/api/flashcards/*`)
     - Manages courses, lessons, decks, and flashcards
     - Endpoints: courses, lessons, decks, flashcards
     - Database: MongoDB  
@@ -82,6 +82,9 @@ async def forward_request(url: str, method: str, headers: dict, params: dict = N
         if k.lower() not in ['content-length', 'host', 'connection', 'transfer-encoding']
     }
     
+    print(f"🔧 Gateway forwarding {method} {url}")
+    print(f"🔧 Authorization header: {filtered_headers.get('authorization', 'NOT FOUND')}")
+    
     async with httpx.AsyncClient(timeout=30.0) as client:
         try:
             if method == "GET":
@@ -105,11 +108,11 @@ async def forward_request(url: str, method: str, headers: dict, params: dict = N
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Gateway error: {str(e)}")
 
-def get_json_data_safely(request: Request):
+async def get_json_data_safely(request: Request):
     """Safely get JSON data from request based on method and content type"""
     if request.method in ["POST", "PUT", "PATCH"] and request.headers.get("content-type") == "application/json":
         try:
-            return request.json()
+            return await request.json()
         except:
             return None
     return None
@@ -136,7 +139,9 @@ async def gateway_info():
             "auth": "/api/v1/auth/*",
             "assignments": "/api/assignments/",
             "courses": "/api/courses/*",
+            "lessons": "/api/lessons/*",
             "decks": "/api/decks/*",
+            "flashcards": "/api/flashcards/*",
             "health": "/health",
             "status": {
                 "auth": "/api/v1/auth/profile",
@@ -277,6 +282,26 @@ async def route_assignments(request: Request, path: str):
         status_code=result["status_code"]
     )
 
+# Backward compatibility route for assignments (without /api prefix)
+@app.api_route("/assignments/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def route_assignments_compat(request: Request, path: str):
+    """Route assignments requests (backward compatibility)"""
+    url = f"{ASSIGNMENT_SERVICE_URL}/api/assignments/{path}"
+    json_data = await request.json() if request.headers.get("content-type") == "application/json" else None
+    
+    result = await forward_request(
+        url=url,
+        method=request.method,
+        headers=dict(request.headers),
+        params=dict(request.query_params),
+        json_data=json_data
+    )
+    
+    return JSONResponse(
+        content=result["content"],
+        status_code=result["status_code"]
+    )
+
 @app.api_route("/api/progress/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def route_progress(request: Request, path: str):
     """Route progress requests"""
@@ -327,10 +352,113 @@ async def route_analytics(request: Request, path: str):
 
 # Content Service Routes
 @app.api_route("/api/courses/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def route_courses(request: Request, path: str):
+@app.api_route("/api/courses/", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route("/api/courses", methods=["GET", "POST", "PUT", "DELETE"])
+async def route_courses(request: Request, path: str = ""):
     """Route courses requests"""
-    url = f"{CONTENT_SERVICE_URL}/api/v1/courses/{path}"
+    url = f"{CONTENT_SERVICE_URL}/api/v1/courses/{path}" if path else f"{CONTENT_SERVICE_URL}/api/v1/courses/"
     json_data = await request.json() if request.headers.get("content-type") == "application/json" else None
+    
+    result = await forward_request(
+        url=url,
+        method=request.method,
+        headers=dict(request.headers),
+        params=dict(request.query_params),
+        json_data=json_data
+    )
+    
+    return JSONResponse(
+        content=result["content"],
+        status_code=result["status_code"]
+    )
+
+# Decks Service Routes (Content Service)
+@app.api_route("/api/decks/", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route("/api/decks", methods=["GET", "POST", "PUT", "DELETE"])
+async def route_decks_root(request: Request):
+    """Route decks root requests to Content Service"""
+    url = f"{CONTENT_SERVICE_URL}/api/v1/decks/"
+    json_data = await get_json_data_safely(request)
+    
+    result = await forward_request(
+        url=url,
+        method=request.method,
+        headers=dict(request.headers),
+        params=dict(request.query_params),
+        json_data=json_data
+    )
+    
+    return JSONResponse(
+        content=result["content"],
+        status_code=result["status_code"]
+    )
+
+# Lessons Service Routes (Content Service)
+@app.api_route("/api/lessons/", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route("/api/lessons", methods=["GET", "POST", "PUT", "DELETE"])
+async def route_lessons_root(request: Request):
+    """Route lessons root requests to Content Service"""
+    url = f"{CONTENT_SERVICE_URL}/api/v1/lessons/"
+    json_data = await get_json_data_safely(request)
+    
+    result = await forward_request(
+        url=url,
+        method=request.method,
+        headers=dict(request.headers),
+        params=dict(request.query_params),
+        json_data=json_data
+    )
+    
+    return JSONResponse(
+        content=result["content"],
+        status_code=result["status_code"]
+    )
+
+@app.api_route("/api/lessons/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def route_lessons(request: Request, path: str):
+    """Route lessons requests"""
+    url = f"{CONTENT_SERVICE_URL}/api/v1/lessons/{path}"
+    json_data = await get_json_data_safely(request)
+    
+    result = await forward_request(
+        url=url,
+        method=request.method,
+        headers=dict(request.headers),
+        params=dict(request.query_params),
+        json_data=json_data
+    )
+    
+    return JSONResponse(
+        content=result["content"],
+        status_code=result["status_code"]
+    )
+
+# Flashcards Service Routes (Content Service)
+@app.api_route("/api/flashcards/", methods=["GET", "POST", "PUT", "DELETE"])
+@app.api_route("/api/flashcards", methods=["GET", "POST", "PUT", "DELETE"])
+async def route_flashcards_root(request: Request):
+    """Route flashcards root requests to Content Service"""
+    url = f"{CONTENT_SERVICE_URL}/api/v1/flashcards/"
+    json_data = await get_json_data_safely(request)
+    
+    result = await forward_request(
+        url=url,
+        method=request.method,
+        headers=dict(request.headers),
+        params=dict(request.query_params),
+        json_data=json_data
+    )
+    
+    return JSONResponse(
+        content=result["content"],
+        status_code=result["status_code"]
+    )
+
+@app.api_route("/api/flashcards/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+async def route_flashcards(request: Request, path: str):
+    """Route flashcards requests"""
+    url = f"{CONTENT_SERVICE_URL}/api/v1/flashcards/{path}"
+    json_data = await get_json_data_safely(request)
     
     result = await forward_request(
         url=url,
@@ -349,7 +477,7 @@ async def route_courses(request: Request, path: str):
 async def route_decks(request: Request, path: str):
     """Route decks requests"""
     url = f"{CONTENT_SERVICE_URL}/api/v1/decks/{path}"
-    json_data = await request.json() if request.headers.get("content-type") == "application/json" else None
+    json_data = await get_json_data_safely(request)
     
     result = await forward_request(
         url=url,
@@ -374,4 +502,6 @@ if __name__ == "__main__":
     print("  - /api/v1/auth/* → Auth Service")
     print("  - /api/assignments/* → Assignment Service")
     print("  - /api/courses/* → Content Service")
+    print("  - /api/decks/* → Content Service")
+    print("  - /api/flashcards/* → Content Service")
     uvicorn.run(app, host="0.0.0.0", port=8000)

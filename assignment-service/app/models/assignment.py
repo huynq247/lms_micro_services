@@ -34,6 +34,10 @@ class Assignment(Base):
     content_id = Column(String(24), nullable=False)  # MongoDB ObjectId
     content_title = Column(String(200), nullable=False)
     
+    # Supporting content (for course assignments with flashcard decks)
+    supporting_decks = Column(Text, nullable=True)  # JSON string of deck IDs
+    supporting_deck_titles = Column(Text, nullable=True)  # JSON string of deck titles
+    
     # Assignment details
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)

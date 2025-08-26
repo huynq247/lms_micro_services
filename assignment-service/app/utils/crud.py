@@ -4,15 +4,58 @@ from sqlalchemy.orm import selectinload
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 import logging
+import json
 
 from app.models.assignment import Assignment, Progress, StudySession
 from app.schemas.assignment import (
     AssignmentCreate, AssignmentUpdate, ProgressUpdate, 
     StudySessionStart, StudySessionUpdate, StudySessionEnd,
-    AssignmentFilter, PaginationParams, ContentType, AssignmentStatus
+    AssignmentFilter, PaginationParams, ContentType, AssignmentStatus,
+    AssignmentResponse
 )
 
 logger = logging.getLogger(__name__)
+
+
+def assignment_to_response(assignment: Assignment) -> AssignmentResponse:
+    """Convert Assignment model to AssignmentResponse with proper JSON parsing"""
+    # Parse supporting decks JSON fields
+    supporting_decks = None
+    supporting_deck_titles = None
+    
+    if assignment.supporting_decks:
+        try:
+            supporting_decks = json.loads(assignment.supporting_decks)
+        except (json.JSONDecodeError, TypeError):
+            supporting_decks = None
+    
+    if assignment.supporting_deck_titles:
+        try:
+            supporting_deck_titles = json.loads(assignment.supporting_deck_titles)
+        except (json.JSONDecodeError, TypeError):
+            supporting_deck_titles = None
+    
+    # Create response object
+    return AssignmentResponse(
+        id=assignment.id,
+        instructor_id=assignment.instructor_id,
+        student_id=assignment.student_id,
+        content_type=ContentType(assignment.content_type),
+        content_id=assignment.content_id,
+        content_title=assignment.content_title,
+        title=assignment.title,
+        description=assignment.description,
+        instructions=assignment.instructions,
+        status=AssignmentStatus(assignment.status),
+        assigned_at=assignment.assigned_at,
+        due_date=assignment.due_date,
+        completed_at=assignment.completed_at,
+        is_active=assignment.is_active,
+        supporting_decks=supporting_decks,
+        supporting_deck_titles=supporting_deck_titles,
+        created_at=assignment.created_at,
+        updated_at=assignment.updated_at
+    )
 
 
 class AssignmentCRUD:
@@ -23,6 +66,18 @@ class AssignmentCRUD:
     
     async def create_assignment(self, assignment_data: AssignmentCreate) -> Assignment:
         """Create a new assignment"""
+        import json
+        
+        # Convert supporting decks to JSON strings if provided
+        supporting_decks_json = None
+        supporting_deck_titles_json = None
+        
+        if assignment_data.supporting_decks:
+            supporting_decks_json = json.dumps(assignment_data.supporting_decks)
+        
+        if assignment_data.supporting_deck_titles:
+            supporting_deck_titles_json = json.dumps(assignment_data.supporting_deck_titles)
+        
         # Create assignment
         db_assignment = Assignment(
             instructor_id=assignment_data.instructor_id,
@@ -33,7 +88,9 @@ class AssignmentCRUD:
             title=assignment_data.title,
             description=assignment_data.description,
             instructions=assignment_data.instructions,
-            due_date=assignment_data.due_date
+            due_date=assignment_data.due_date,
+            supporting_decks=supporting_decks_json,
+            supporting_deck_titles=supporting_deck_titles_json
         )
         
         self.db.add(db_assignment)

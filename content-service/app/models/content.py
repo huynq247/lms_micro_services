@@ -66,6 +66,7 @@ class Lesson(BaseModel):
     
     # Course relationship
     course_id: PyObjectId = Field(..., description="Course ObjectId")
+    instructor_id: Optional[int] = Field(None, description="Instructor ID")
     order: int = Field(..., ge=1, description="Lesson order in course")
     
     # Media URLs
@@ -81,6 +82,7 @@ class Lesson(BaseModel):
     duration: Optional[int] = Field(None, ge=0, description="Lesson duration in minutes")
     
     # Status
+    is_published: bool = Field(default=False, description="Whether lesson is published")
     is_active: bool = Field(default=True)
     
     # Timestamps

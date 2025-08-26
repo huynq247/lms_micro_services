@@ -79,6 +79,15 @@ def get_admin_user(current_user: User = Depends(get_current_active_user)) -> Use
         )
     return current_user
 
+def get_teacher_or_admin_user(current_user: User = Depends(get_current_active_user)) -> User:
+    """Require teacher or admin privileges"""
+    if current_user.role not in [UserRole.TEACHER, UserRole.ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    return current_user
+
 @router.post("/register", response_model=User, status_code=status.HTTP_201_CREATED)
 async def register_user(
     user: UserCreate,

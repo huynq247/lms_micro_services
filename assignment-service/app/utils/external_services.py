@@ -68,6 +68,59 @@ class ContentServiceClient:
         self.base_url = settings.content_service_url
         self.timeout = 10.0
     
+    async def get_course_details(self, course_id: str, auth_token: str = None) -> Optional[Dict[str, Any]]:
+        """Get course details with authentication"""
+        try:
+            headers = {}
+            if auth_token:
+                headers["Authorization"] = f"Bearer {auth_token}"
+                
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                response = await client.get(
+                    f"{self.base_url}/api/v1/courses/{course_id}",
+                    headers=headers
+                )
+                if response.status_code == 200:
+                    return response.json()
+                elif response.status_code == 404:
+                    logger.warning(f"Course {course_id} not found")
+                    return None
+                else:
+                    logger.error(f"Error fetching course: {response.status_code}")
+                    return None
+        except Exception as e:
+            logger.warning(f"Failed to get course {course_id} from Content Service: {e}")
+            return None
+    
+    async def get_course_progress(self, course_id: str, student_id: int, auth_token: str = None) -> Optional[Dict[str, Any]]:
+        """Get course progress for student"""
+        try:
+            headers = {}
+            if auth_token:
+                headers["Authorization"] = f"Bearer {auth_token}"
+                
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                # Get course lessons to calculate progress
+                response = await client.get(
+                    f"{self.base_url}/api/v1/lessons/",
+                    params={"course_id": course_id},
+                    headers=headers
+                )
+                if response.status_code == 200:
+                    lessons_data = response.json()
+                    total_lessons = lessons_data.get("total", 0)
+                    # TODO: Implement actual lesson completion tracking
+                    # For now, return basic structure
+                    return {
+                        "total_lessons": total_lessons,
+                        "completed_lessons": 0,  # Will be implemented later
+                        "progress_percentage": 0.0
+                    }
+                return None
+        except Exception as e:
+            logger.warning(f"Failed to get course progress for course {course_id}, student {student_id}: {e}")
+            return None
+
     async def get_content(self, content_type: str, content_id: str) -> Optional[Dict[str, Any]]:
         """Get content information from Content Service"""
         try:

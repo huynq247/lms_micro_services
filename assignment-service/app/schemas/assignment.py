@@ -28,12 +28,15 @@ class AssignmentBase(BaseModel):
     content_id: str = Field(..., description="MongoDB ObjectId of course or deck")
     content_title: str = Field(..., max_length=200)
     due_date: Optional[datetime] = None
+    supporting_decks: Optional[List[str]] = Field(None, description="Supporting deck IDs for course assignments")
+    supporting_deck_titles: Optional[List[str]] = Field(None, description="Supporting deck titles for display")
 
 
 class AssignmentCreate(AssignmentBase):
     """Schema for creating assignments"""
     student_id: int = Field(..., gt=0)
     instructor_id: int = Field(..., gt=0)
+    # Course validation will be handled in API layer
 
 
 class AssignmentUpdate(BaseModel):
@@ -50,11 +53,22 @@ class AssignmentResponse(AssignmentBase):
     """Schema for assignment responses"""
     id: int
     instructor_id: int
+    instructor_name: Optional[str] = None
     student_id: int
+    student_name: Optional[str] = None
     status: AssignmentStatus
     assigned_at: datetime
     completed_at: Optional[datetime] = None
     is_active: bool
+    # Course progress fields
+    course_progress_percentage: Optional[float] = Field(None, ge=0.0, le=100.0)
+    total_lessons: Optional[int] = Field(None, ge=0)
+    completed_lessons: Optional[int] = Field(None, ge=0)
+    
+    # Supporting content for display
+    supporting_decks: Optional[List[str]] = None
+    supporting_deck_titles: Optional[List[str]] = None
+    
     created_at: datetime
     updated_at: Optional[datetime] = None
     

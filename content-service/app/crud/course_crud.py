@@ -3,8 +3,10 @@ from typing import List, Optional, Dict, Any
 from bson import ObjectId
 from datetime import datetime
 from app.models.content import Course, PyObjectId
-from app.schemas.content import (
-    CourseCreate, CourseUpdate, CourseFilter,
+from app.schemas.course import (
+    CourseCreate, CourseUpdate, CourseFilter
+)
+from app.schemas.common import (
     PaginationParams
 )
 import logging
@@ -58,6 +60,9 @@ class CourseCRUD:
                 query["is_published"] = filters.is_published
             if filters.is_active is not None:
                 query["is_active"] = filters.is_active
+            if filters.course_ids is not None:
+                from bson import ObjectId
+                query["_id"] = {"$in": [ObjectId(course_id) for course_id in filters.course_ids]}
         
         # Add search if provided
         if pagination.search:
@@ -115,3 +120,18 @@ class CourseCRUD:
         except Exception as e:
             logger.error(f"Error deleting course {course_id}: {e}")
             return False
+
+    async def update_course_lesson_count(self, course_id: str):
+        """Update total_lessons count for a course"""
+        try:
+            lesson_count = await self.db.lessons.count_documents({
+                "course_id": ObjectId(course_id),
+                "is_active": True
+            })
+            
+            await self.collection.update_one(
+                {"_id": ObjectId(course_id)},
+                {"$set": {"total_lessons": lesson_count, "updated_at": datetime.utcnow()}}
+            )
+        except Exception as e:
+            logger.error(f"Error updating lesson count for course {course_id}: {e}")

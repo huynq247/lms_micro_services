@@ -3,14 +3,42 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List, Optional
 
 from app.core.database import get_database
-from app.schemas.content import (
-    DeckCreate, DeckUpdate, DeckResponse, DeckFilter,
-    FlashcardCreate, FlashcardUpdate, FlashcardResponse,
+from app.core.auth import get_current_user, get_teacher_or_admin_user, User, UserRole, get_assigned_content_ids
+from app.schemas.deck import (
+    DeckCreate, DeckUpdate, DeckResponse, DeckFilter
+)
+from app.schemas.flashcard import (
+    FlashcardCreate, FlashcardUpdate, FlashcardResponse
+)
+from app.schemas.common import (
     ReorderRequest, PaginationParams, PaginatedResponse, MessageResponse
 )
 from app.crud import DeckCRUD, FlashcardCRUD
 
 router = APIRouter(prefix="/decks", tags=["Decks & Flashcards"])
+
+@router.get("/debug/instructor/{instructor_id}", response_model=List[dict])
+async def debug_decks_by_instructor(
+    instructor_id: int,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Debug endpoint to see decks by instructor"""
+    cursor = db.decks.find({"instructor_id": instructor_id})
+    decks_data = await cursor.to_list(length=None)
+    for deck in decks_data:
+        deck["_id"] = str(deck["_id"])
+    return decks_data
+
+@router.get("/debug/all-decks", response_model=List[dict])
+async def debug_all_decks(
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Debug endpoint to see all decks with their instructor_id"""
+    cursor = db.decks.find({})
+    decks_data = await cursor.to_list(length=None)
+    for deck in decks_data:
+        deck["_id"] = str(deck["_id"])
+    return decks_data
 
 # Deck endpoints
 @router.post("/", response_model=DeckResponse, status_code=status.HTTP_201_CREATED)
@@ -156,9 +184,10 @@ async def get_decks(
     tags: Optional[str] = Query(None, description="Comma-separated tags"),
     is_published: Optional[bool] = Query(None),
     is_active: Optional[bool] = Query(True),
+    current_user: User = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
-    """Get decks with pagination and filtering"""
+    """Get decks with role-based filtering"""
     deck_crud = DeckCRUD(db)
     
     pagination = PaginationParams(page=page, size=size, search=search)
@@ -168,13 +197,40 @@ async def get_decks(
     if tags:
         tag_list = [tag.strip().lower() for tag in tags.split(",") if tag.strip()]
     
-    filters = DeckFilter(
-        instructor_id=instructor_id,
-        category=category,
-        tags=tag_list,
-        is_published=is_published,
-        is_active=is_active
-    )
+    # Role-based filtering
+    if current_user.role == UserRole.STUDENT:
+        # Students can see: assigned decks + public decks
+        assigned_deck_ids = await get_assigned_content_ids(current_user.id, "deck")
+        
+        if assigned_deck_ids:
+            # Student has assignments - show assigned decks + public decks
+            filters = DeckFilter(
+                instructor_id=instructor_id,
+                category=category,
+                tags=tag_list,
+                is_published=True,  # Only published decks
+                is_active=is_active,
+                deck_ids=assigned_deck_ids,
+                include_public=True  # Include both assigned and public decks
+            )
+        else:
+            # Student has no assignments - show only public decks
+            filters = DeckFilter(
+                instructor_id=instructor_id,
+                category=category,
+                tags=tag_list,
+                is_published=True,  # Only published/public decks
+                is_active=is_active,
+                include_public=True  # This ensures we get public decks even with no assignments
+            )
+    else:  # TEACHER or ADMIN - can see all decks
+        filters = DeckFilter(
+            instructor_id=instructor_id,
+            category=category,
+            tags=tag_list,
+            is_published=is_published,
+            is_active=is_active
+        )
     
     result = await deck_crud.get_decks(pagination, filters)
     

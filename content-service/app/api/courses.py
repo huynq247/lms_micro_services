@@ -3,9 +3,14 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List, Optional
 
 from app.core.database import get_database
-from app.schemas.content import (
-    CourseCreate, CourseUpdate, CourseResponse, CourseFilter,
-    LessonCreate, LessonUpdate, LessonResponse,
+from app.core.auth import get_current_user, get_teacher_or_admin_user, User, UserRole, get_assigned_content_ids
+from app.schemas.course import (
+    CourseCreate, CourseUpdate, CourseResponse, CourseFilter
+)
+from app.schemas.lesson import (
+    LessonCreate, LessonUpdate, LessonResponse
+)
+from app.schemas.common import (
     ReorderRequest, PaginationParams, PaginatedResponse, MessageResponse
 )
 from app.crud import CourseCRUD, LessonCRUD
@@ -94,16 +99,40 @@ async def get_courses(
     instructor_id: Optional[int] = Query(None),
     is_published: Optional[bool] = Query(None),
     is_active: Optional[bool] = Query(True),
+    current_user: User = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
-    """Get courses with pagination and filtering - PERFORMANCE OPTIMIZED"""
+    """Get courses with role-based filtering"""
     try:
         course_crud = CourseCRUD(db)
         
         pagination = PaginationParams(page=page, size=size, search=search)
-        filters = CourseFilter(
-            instructor_id=instructor_id,
-            is_published=is_published,
+        
+        # Role-based filtering
+        if current_user.role == UserRole.STUDENT:
+            # Students can only see assigned courses
+            assigned_course_ids = await get_assigned_content_ids(current_user.id, "course")
+            if not assigned_course_ids:
+                # No assigned courses, return empty result
+                return {
+                    "items": [],
+                    "total": 0,
+                    "page": page,
+                    "size": size,
+                    "total_pages": 0
+                }
+            
+            # Filter by assigned course IDs
+            filters = CourseFilter(
+                instructor_id=instructor_id,
+                is_published=is_published,
+                is_active=is_active,
+                course_ids=assigned_course_ids
+            )
+        else:  # TEACHER or ADMIN - can see all courses
+            filters = CourseFilter(
+                instructor_id=instructor_id,
+                is_published=is_published,
             is_active=is_active
         )
         
@@ -317,3 +346,64 @@ async def reorder_lessons(
         )
     
     return MessageResponse(message="Lessons reordered successfully")
+
+@router.post("/{course_id}/lessons/{lesson_id}/assign", response_model=MessageResponse)
+async def assign_existing_lesson_to_course(
+    course_id: str,
+    lesson_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_database)
+):
+    """Assign an existing lesson to a course (creates a copy)"""
+    # Verify course exists
+    course_crud = CourseCRUD(db)
+    course = await course_crud.get_course(course_id)
+    if not course:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Course not found"
+        )
+    
+    # Verify lesson exists
+    lesson_crud = LessonCRUD(db)
+    original_lesson = await lesson_crud.get_lesson(lesson_id)
+    if not original_lesson:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lesson not found"
+        )
+    
+    # Check if lesson is already assigned to this course
+    if original_lesson.course_id == course_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Lesson is already assigned to this course"
+        )
+    
+    try:
+        # Create a copy of the lesson for the new course
+        # Get the highest order number in the target course
+        existing_lessons = await lesson_crud.get_lessons_by_course(course_id)
+        max_order = max([lesson.order for lesson in existing_lessons], default=0)
+        
+        # Create lesson copy with new course_id and incremented order
+        lesson_copy = LessonCreate(
+            course_id=course_id,
+            title=f"{original_lesson.title} (Copy)",
+            content=original_lesson.content,
+            order=max_order + 1,
+            duration=original_lesson.duration,
+            image_url=original_lesson.image_url,
+            video_url=original_lesson.video_url,
+            is_published=False,  # Start as unpublished for review
+            instructor_id=original_lesson.instructor_id
+        )
+        
+        await lesson_crud.create_lesson(lesson_copy)
+        
+        return MessageResponse(message=f"Lesson '{original_lesson.title}' successfully assigned to course")
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error assigning lesson to course: {str(e)}"
+        )

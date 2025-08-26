@@ -34,6 +34,10 @@ class UserCRUD:
             
         return query.offset(skip).limit(limit).all()
 
+    def get_users_created_by(self, creator_id: int, skip: int = 0, limit: int = 100) -> List[User]:
+        """Get users created by specific teacher/admin"""
+        return self.db.query(User).filter(User.created_by == creator_id).offset(skip).limit(limit).all()
+
     def count_users(self, role: Optional[UserRole] = None, is_active: Optional[bool] = None) -> int:
         """Count users with filtering"""
         query = self.db.query(User)
@@ -45,7 +49,7 @@ class UserCRUD:
             
         return query.count()
 
-    def create_user(self, user: UserCreate) -> User:
+    def create_user(self, user: UserCreate, created_by_user_id: Optional[int] = None) -> User:
         """Create new user"""
         hashed_password = get_password_hash(user.password)
         
@@ -55,7 +59,8 @@ class UserCRUD:
             full_name=user.full_name,
             hashed_password=hashed_password,
             role=user.role,
-            is_active=user.is_active
+            is_active=user.is_active,
+            created_by=created_by_user_id
         )
         
         self.db.add(db_user)
@@ -70,6 +75,12 @@ class UserCRUD:
             return None
 
         update_data = user.dict(exclude_unset=True)
+        
+        # Hash password if provided
+        if 'password' in update_data and update_data['password']:
+            update_data['hashed_password'] = get_password_hash(update_data['password'])
+            del update_data['password']  # Remove plain password from update_data
+        
         for field, value in update_data.items():
             setattr(db_user, field, value)
 
