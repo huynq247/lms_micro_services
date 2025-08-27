@@ -19,6 +19,9 @@ pydantic[email]==2.5.0
 # Environment
 python-dotenv==1.0.0
 
+# AI Integration
+google-generativeai==0.3.2
+
 # URL Validation & Utilities
 requests==2.31.0
 validators==0.22.0

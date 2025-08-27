@@ -26,12 +26,18 @@ def assignment_to_response(assignment: Assignment) -> AssignmentResponse:
     if assignment.supporting_decks:
         try:
             supporting_decks = json.loads(assignment.supporting_decks)
+            # Handle double-encoded JSON strings
+            if isinstance(supporting_decks, str):
+                supporting_decks = json.loads(supporting_decks)
         except (json.JSONDecodeError, TypeError):
             supporting_decks = None
     
     if assignment.supporting_deck_titles:
         try:
             supporting_deck_titles = json.loads(assignment.supporting_deck_titles)
+            # Handle double-encoded JSON strings
+            if isinstance(supporting_deck_titles, str):
+                supporting_deck_titles = json.loads(supporting_deck_titles)
         except (json.JSONDecodeError, TypeError):
             supporting_deck_titles = None
     

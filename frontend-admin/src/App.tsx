@@ -15,6 +15,8 @@ import UserManagementPage from './pages/admin/UserManagementPage';
 import DecksPage from './pages/decks/DecksPage';
 import DeckDetailPage from './pages/decks/DeckDetailPage';
 import FlashcardStudyPage from './pages/decks/FlashcardStudyPage';
+import AIFlashcardCreator from './pages/decks/AIFlashcardCreator';
+import AIDeckCreator from './pages/decks/AIDeckCreator';
 
 // Layout
 import Layout from './components/layout/Layout';
@@ -121,6 +123,8 @@ function App() {
                 <Route path="decks" element={<DecksPage />} />
                 <Route path="decks/:deckId" element={<DeckDetailPage />} />
                 <Route path="decks/:deckId/study" element={<FlashcardStudyPage />} />
+                <Route path="ai/flashcard-creator" element={<AIFlashcardCreator />} />
+                <Route path="ai/deck-creator" element={<AIDeckCreator />} />
               </Route>
 
               {/* Catch all route */}

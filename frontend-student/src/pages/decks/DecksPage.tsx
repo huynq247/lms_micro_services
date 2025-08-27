@@ -481,7 +481,10 @@ const DecksPage: React.FC = () => {
           sx={{
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-            gap: 3
+            gap: 2,
+            '& > *': {
+              minWidth: 0, // Prevent grid items from overflowing
+            }
           }}
         >
           {Array.from({ length: 2 }, (_, colIndex) => {
@@ -504,55 +507,51 @@ const DecksPage: React.FC = () => {
                 <Box
                   sx={{ 
                     background: colIndex === 0 
-                      ? 'linear-gradient(135deg, rgba(30,60,114,0.9) 0%, rgba(42,82,152,0.7) 100%)'
-                      : 'linear-gradient(135deg, rgba(25,84,123,0.9) 0%, rgba(30,60,114,0.8) 100%)',
-                    borderRadius: 3,
-                    border: colIndex === 0 
-                      ? '2px solid rgba(30,60,114,0.4)'
-                      : '2px solid rgba(25,84,123,0.4)',
+                      ? 'linear-gradient(135deg, rgba(30,60,114,0.8) 0%, rgba(42,82,152,0.6) 100%)'
+                      : 'linear-gradient(135deg, rgba(25,84,123,0.8) 0%, rgba(30,60,114,0.7) 100%)',
+                    borderRadius: 2,
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    overflow: 'hidden',
                     '&:hover': {
-                      transform: 'translateY(-2px)',
+                      transform: 'translateY(-1px)',
                       boxShadow: colIndex === 0 
-                        ? '0 12px 30px rgba(30,60,114,0.2)'
-                        : '0 12px 30px rgba(25,84,123,0.3)',
+                        ? '0 8px 20px rgba(30,60,114,0.15)'
+                        : '0 8px 20px rgba(25,84,123,0.2)',
                     },
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                <List>
+                <List sx={{ p: 1 }}>
                   {columnDecks.map((deck: Deck, index: number) => (
                     <React.Fragment key={deck.id}>
                       <ListItem
                         onClick={() => handleDeckClick(deck.id)}
                         sx={{
-                          py: 2,
-                          px: 3,
+                          py: 1.5,
+                          px: 2,
                           borderRadius: 2,
                           mb: 1,
-                          mx: 1,
+                          mx: 0.5,
                           background: clickedDecks.has(deck.id)
-                            ? 'rgba(255, 255, 255, 0.25)'
+                            ? 'rgba(255, 255, 255, 0.2)'
                             : index % 2 === 0 
-                            ? 'linear-gradient(90deg, rgba(30,60,114,0.6) 0%, rgba(42,82,152,0.4) 100%)'
-                            : 'linear-gradient(90deg, rgba(25,84,123,0.6) 0%, rgba(30,60,114,0.4) 100%)',
-                          backdropFilter: clickedDecks.has(deck.id) ? 'blur(20px)' : 'none',
-                          border: clickedDecks.has(deck.id) 
-                            ? '1px solid rgba(255, 255, 255, 0.18)'
-                            : '1px solid rgba(255,255,255,0.5)',
+                            ? 'linear-gradient(90deg, rgba(30,60,114,0.5) 0%, rgba(42,82,152,0.3) 100%)'
+                            : 'linear-gradient(90deg, rgba(25,84,123,0.5) 0%, rgba(30,60,114,0.3) 100%)',
+                          backdropFilter: clickedDecks.has(deck.id) ? 'blur(15px)' : 'none',
+                          border: '1px solid rgba(255,255,255,0.3)',
                           boxShadow: clickedDecks.has(deck.id)
-                            ? '0 8px 32px 0 rgba(31, 38, 135, 0.37)'
+                            ? '0 4px 20px 0 rgba(31, 38, 135, 0.3)'
                             : 'none',
                           cursor: 'pointer',
+                          overflow: 'hidden',
                           '&:hover': {
                             background: clickedDecks.has(deck.id)
-                              ? 'rgba(255, 255, 255, 0.35)'
-                              : 'linear-gradient(90deg, rgba(30,60,114,0.3) 0%, rgba(42,82,152,0.2) 100%)',
-                            transform: 'translateX(8px)',
-                            boxShadow: clickedDecks.has(deck.id)
-                              ? '0 12px 40px 0 rgba(31, 38, 135, 0.5)'
-                              : '0 4px 15px rgba(0,0,0,0.1)',
+                              ? 'rgba(255, 255, 255, 0.3)'
+                              : 'linear-gradient(90deg, rgba(30,60,114,0.4) 0%, rgba(42,82,152,0.2) 100%)',
+                            transform: 'translateX(4px)',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                           },
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          transition: 'all 0.2s ease',
                         }}
                       >
                         <Avatar
@@ -566,36 +565,34 @@ const DecksPage: React.FC = () => {
                               : getDifficultyColor(deck.difficulty) === 'error' 
                               ? 'linear-gradient(135deg, #19547b 0%, #1e3c72 100%)' 
                               : 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-                            mr: 2,
-                            width: 48,
-                            height: 48,
-                            boxShadow: clickedDecks.has(deck.id) 
-                              ? '0 8px 32px 0 rgba(31, 38, 135, 0.37)'
-                              : '0 4px 12px rgba(0,0,0,0.15)',
-                            border: clickedDecks.has(deck.id)
-                              ? '2px solid rgba(255,255,255,0.8)'
-                              : '2px solid rgba(255,255,255,0.5)',
-                            backdropFilter: clickedDecks.has(deck.id) ? 'blur(10px)' : 'none',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            mr: 1.5,
+                            width: 40,
+                            height: 40,
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                            border: '1px solid rgba(255,255,255,0.4)',
+                            backdropFilter: clickedDecks.has(deck.id) ? 'blur(8px)' : 'none',
+                            transition: 'all 0.2s ease',
                           }}
                         >
-                          <Style />
+                          <Style sx={{ fontSize: 20 }} />
                         </Avatar>
                         
                         <ListItemText
                           primary={
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5, flexWrap: 'wrap' }}>
                               <Typography 
-                                variant="h6" 
+                                variant="body1" 
                                 component="span" 
                                 sx={{ 
-                                  fontWeight: 'bold', 
+                                  fontWeight: 600, 
                                   mr: 1,
-                                  color: clickedDecks.has(deck.id) 
-                                    ? 'rgba(255,255,255,0.95)' 
-                                    : 'rgba(255,255,255,0.95)',
-                                  textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                                  transition: 'all 0.3s ease'
+                                  color: 'rgba(255,255,255,0.95)',
+                                  textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                                  fontSize: '0.9rem',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  maxWidth: '120px'
                                 }}
                               >
                                 {deck.title}
@@ -605,15 +602,17 @@ const DecksPage: React.FC = () => {
                                 label={deck.difficulty || 'No difficulty'}
                                 color={getDifficultyColor(deck.difficulty)}
                                 sx={{ 
-                                  mr: 1,
-                                  backdropFilter: clickedDecks.has(deck.id) ? 'blur(10px)' : 'none',
+                                  mr: 0.5,
+                                  fontSize: '0.65rem',
+                                  height: '20px',
+                                  backdropFilter: clickedDecks.has(deck.id) ? 'blur(8px)' : 'none',
                                   background: clickedDecks.has(deck.id) 
-                                    ? 'rgba(255,255,255,0.3)' 
+                                    ? 'rgba(255,255,255,0.25)' 
                                     : undefined,
                                   border: clickedDecks.has(deck.id) 
-                                    ? '1px solid rgba(255,255,255,0.5)' 
+                                    ? '1px solid rgba(255,255,255,0.4)' 
                                     : undefined,
-                                  transition: 'all 0.3s ease'
+                                  transition: 'all 0.2s ease'
                                 }}
                               />
                               <Chip
@@ -621,16 +620,18 @@ const DecksPage: React.FC = () => {
                                 label={`${deck.total_flashcards || 0} cards`}
                                 variant="outlined"
                                 sx={{ 
-                                  mr: 1,
-                                  backdropFilter: clickedDecks.has(deck.id) ? 'blur(10px)' : 'none',
+                                  mr: 0.5,
+                                  fontSize: '0.65rem',
+                                  height: '20px',
+                                  backdropFilter: clickedDecks.has(deck.id) ? 'blur(8px)' : 'none',
                                   background: clickedDecks.has(deck.id) 
-                                    ? 'rgba(255,255,255,0.2)' 
+                                    ? 'rgba(255,255,255,0.15)' 
                                     : undefined,
                                   border: clickedDecks.has(deck.id) 
-                                    ? '1px solid rgba(255,255,255,0.4)' 
+                                    ? '1px solid rgba(255,255,255,0.3)' 
                                     : undefined,
-                                  color: 'rgba(255,255,255,0.95)',
-                                  transition: 'all 0.3s ease'
+                                  color: 'rgba(255,255,255,0.9)',
+                                  transition: 'all 0.2s ease'
                                 }}
                               />
                               {(deck.is_published || deck.is_public) && (
@@ -640,63 +641,76 @@ const DecksPage: React.FC = () => {
                                   color="info"
                                   variant="outlined"
                                   sx={{ 
-                                    backdropFilter: clickedDecks.has(deck.id) ? 'blur(10px)' : 'none',
+                                    fontSize: '0.65rem',
+                                    height: '20px',
+                                    backdropFilter: clickedDecks.has(deck.id) ? 'blur(8px)' : 'none',
                                     background: clickedDecks.has(deck.id) 
-                                      ? 'rgba(255,255,255,0.2)' 
+                                      ? 'rgba(255,255,255,0.15)' 
                                       : undefined,
                                     border: clickedDecks.has(deck.id) 
-                                      ? '1px solid rgba(255,255,255,0.4)' 
+                                      ? '1px solid rgba(255,255,255,0.3)' 
                                       : undefined,
-                                    color: 'rgba(255,255,255,0.95)',
-                                    transition: 'all 0.3s ease'
+                                    color: 'rgba(255,255,255,0.9)',
+                                    transition: 'all 0.2s ease'
                                   }}
                                 />
                               )}
                             </Box>
                           }
                           secondary={
-                            <Box>
+                            <Box sx={{ mt: 0.5 }}>
                               <Typography
                                 variant="body2"
                                 sx={{
-                                  mb: 1,
+                                  mb: 0.5,
                                   display: '-webkit-box',
-                                  WebkitLineClamp: 2,
+                                  WebkitLineClamp: 1,
                                   WebkitBoxOrient: 'vertical',
                                   overflow: 'hidden',
-                                  color: 'rgba(255,255,255,0.95)',
-                                  textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-                                  transition: 'all 0.3s ease'
+                                  color: 'rgba(255,255,255,0.8)',
+                                  fontSize: '0.75rem',
+                                  textShadow: '0 1px 2px rgba(0,0,0,0.2)',
                                 }}
                               >
                                 {deck.description || 'No description available'}
                               </Typography>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
                                 {deck.instructor_name && (
-                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <Person sx={{ fontSize: 14, mr: 0.5 }} />
-                                    <Typography variant="caption" color="text.secondary">
-                                      Instructor: {deck.instructor_name}
+                                  <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                                    <Person sx={{ fontSize: 12, mr: 0.3, color: 'rgba(255,255,255,0.7)' }} />
+                                    <Typography 
+                                      variant="caption" 
+                                      sx={{ 
+                                        color: 'rgba(255,255,255,0.7)',
+                                        fontSize: '0.65rem',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        maxWidth: '80px'
+                                      }}
+                                    >
+                                      {deck.instructor_name}
                                     </Typography>
                                   </Box>
                                 )}
-                                <Box sx={{ display: 'flex', gap: 1, ml: 'auto' }}>
+                                <Box sx={{ display: 'flex', gap: 0.5 }}>
                                   <Button
                                     variant="contained"
                                     size="small"
-                                    startIcon={<Visibility />}
+                                    startIcon={<Visibility sx={{ fontSize: 14 }} />}
                                     onClick={() => handleViewDeck(deck.id)}
                                     sx={{ 
-                                      fontSize: '0.75rem',
+                                      fontSize: '0.65rem',
                                       minWidth: 'auto',
-                                      px: 2,
-                                      py: 1,
+                                      px: 1.5,
+                                      py: 0.5,
+                                      height: '24px',
                                       background: 'linear-gradient(45deg, #1e3c72 30%, #2a5298 90%)',
-                                      borderRadius: 20,
+                                      borderRadius: 12,
                                       color: 'rgba(255,255,255,0.95)',
                                       '&:hover': {
                                         background: 'linear-gradient(45deg, #2a5298 30%, #19547b 90%)',
-                                        transform: 'scale(1.05)',
+                                        transform: 'scale(1.02)',
                                       },
                                       transition: 'all 0.2s ease'
                                     }}
@@ -704,21 +718,23 @@ const DecksPage: React.FC = () => {
                                     View
                                   </Button>
                                   <Button
-                                    variant="contained"
+                                    variant="outlined"
                                     size="small"
-                                    startIcon={<School />}
+                                    startIcon={<School sx={{ fontSize: 14 }} />}
                                     onClick={() => handleStudyDeck(deck.id)}
                                     sx={{ 
-                                      fontSize: '0.75rem',
+                                      fontSize: '0.65rem',
                                       minWidth: 'auto',
-                                      px: 2,
-                                      py: 1,
-                                      background: 'linear-gradient(45deg, #1e3c72 30%, #2a5298 90%)',
-                                      borderRadius: 20,
-                                      color: 'rgba(255,255,255,0.95)',
+                                      px: 1.5,
+                                      py: 0.5,
+                                      height: '24px',
+                                      borderColor: 'rgba(255,255,255,0.4)',
+                                      color: 'rgba(255,255,255,0.9)',
+                                      borderRadius: 12,
                                       '&:hover': {
-                                        background: 'linear-gradient(45deg, #2a5298 30%, #19547b 90%)',
-                                        transform: 'scale(1.05)',
+                                        borderColor: 'rgba(255,255,255,0.6)',
+                                        background: 'rgba(255,255,255,0.1)',
+                                        transform: 'scale(1.02)',
                                       },
                                       transition: 'all 0.2s ease'
                                     }}

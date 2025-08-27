@@ -535,10 +535,6 @@ const StudyFlashcardsPage: React.FC = () => {
                       {currentCard.back}
                     </Typography>
                     
-                    <Typography variant="body2" color="rgba(255,255,255,0.6)" sx={{ fontStyle: 'italic', mb: 2 }}>
-                      Click to flip back
-                    </Typography>
-                    
                     {/* Additional Information */}
                     {(currentCard.wordclass || currentCard.definition || currentCard.example) && (
                       <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(255,255,255,0.2)' }}>

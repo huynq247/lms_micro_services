@@ -19,12 +19,18 @@ async def create_flashcard(
     db: AsyncIOMotorDatabase = Depends(get_database)
 ):
     """Create a new flashcard"""
+    print(f"🔍 Received flashcard creation request: {flashcard}")
+    print(f"📊 Flashcard dict: {flashcard.dict()}")
+    
     flashcard_crud = FlashcardCRUD(db)
     
     try:
         db_flashcard = await flashcard_crud.create_flashcard(flashcard)
-        return FlashcardResponse(**db_flashcard.dict())
+        response = FlashcardResponse(**db_flashcard.dict())
+        print(f"✅ Created flashcard response: {response}")
+        return response
     except Exception as e:
+        print(f"❌ Error creating flashcard: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error creating flashcard: {str(e)}"

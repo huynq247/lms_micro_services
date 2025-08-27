@@ -105,6 +105,11 @@ const DeckDetailPage: React.FC = () => {
     setValue('difficulty', card.difficulty);
     setValue('deck_id', card.deck_id);
     setValue('order', card.order);
+    setValue('front_image_url', card.front_image_url || '');
+    setValue('back_image_url', card.back_image_url || '');
+    setValue('wordclass', card.wordclass || '');
+    setValue('definition', card.definition || '');
+    setValue('example', card.example || '');
     setOpenCreateDialog(true);
   };
 
@@ -303,9 +308,38 @@ const DeckDetailPage: React.FC = () => {
                 onClick={() => handleFlipCard(flashcard.id)}
                 sx={{ minHeight: 150, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
               >
-                <Typography variant="body1" align="center">
+                <Typography variant="body1" align="center" sx={{ mb: 2 }}>
                   {flippedCards.has(flashcard.id) ? flashcard.back : flashcard.front}
                 </Typography>
+                
+                {/* Show additional vocabulary info when available */}
+                {(flashcard.definition || flashcard.example || flashcard.wordclass) && (
+                  <Box sx={{ mt: 1, mb: 1 }}>
+                    {flashcard.wordclass && (
+                      <Chip 
+                        label={flashcard.wordclass} 
+                        size="small" 
+                        variant="outlined"
+                        sx={{ mr: 1, mb: 1 }}
+                      />
+                    )}
+                    {flashcard.definition && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        <strong>Definition:</strong> {flashcard.definition.length > 100 
+                          ? `${flashcard.definition.substring(0, 100)}...` 
+                          : flashcard.definition}
+                      </Typography>
+                    )}
+                    {flashcard.example && (
+                      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        <strong>Example:</strong> {flashcard.example.length > 100 
+                          ? `${flashcard.example.substring(0, 100)}...` 
+                          : flashcard.example}
+                      </Typography>
+                    )}
+                  </Box>
+                )}
+                
                 <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Chip 
                     label={flashcard.difficulty || 'medium'} 
@@ -460,6 +494,45 @@ const DeckDetailPage: React.FC = () => {
               variant="outlined"
               placeholder="https://example.com/image.jpg"
               {...register('back_image_url')}
+              sx={{ mb: 2 }}
+            />
+
+            {/* Vocabulary Information Section */}
+            <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+              Vocabulary Information (Optional)
+            </Typography>
+            
+            <TextField
+              margin="dense"
+              label="Word Class"
+              fullWidth
+              variant="outlined"
+              placeholder="noun, verb, adjective, etc."
+              {...register('wordclass')}
+              sx={{ mb: 2 }}
+            />
+            
+            <TextField
+              margin="dense"
+              label="Definition"
+              fullWidth
+              multiline
+              rows={3}
+              variant="outlined"
+              placeholder="Detailed definition of the word/concept"
+              {...register('definition')}
+              sx={{ mb: 2 }}
+            />
+            
+            <TextField
+              margin="dense"
+              label="Example"
+              fullWidth
+              multiline
+              rows={2}
+              variant="outlined"
+              placeholder="Usage example or sentence"
+              {...register('example')}
               sx={{ mb: 2 }}
             />
             

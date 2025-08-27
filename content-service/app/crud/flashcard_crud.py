@@ -19,12 +19,20 @@ class FlashcardCRUD:
     
     async def create_flashcard(self, flashcard_data: FlashcardCreate) -> Flashcard:
         """Create a new flashcard"""
+        logger.info(f"Creating flashcard with data: {flashcard_data}")
+        
         flashcard_dict = flashcard_data.dict()
+        logger.info(f"Flashcard dict before processing: {flashcard_dict}")
+        
         flashcard_dict["deck_id"] = ObjectId(flashcard_dict["deck_id"])
         flashcard_dict["created_at"] = datetime.utcnow()
         
+        logger.info(f"Final flashcard dict to insert: {flashcard_dict}")
+        
         result = await self.collection.insert_one(flashcard_dict)
         flashcard_dict["_id"] = result.inserted_id
+        
+        logger.info(f"Inserted flashcard with ID: {result.inserted_id}")
         
         # Update deck flashcard count
         from .deck_crud import DeckCRUD

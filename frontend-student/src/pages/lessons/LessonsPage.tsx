@@ -279,25 +279,11 @@ const LessonsPage: React.FC = () => {
                         </Box>
                       }
                       secondary={
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{
-                              mb: 1,
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                            }}
-                          >
-                            {lesson.content || 'No description available'}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Typography variant="caption" color="text.secondary">
+                            Course ID: {lesson.course_id}
                           </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Typography variant="caption" color="text.secondary">
-                              Course ID: {lesson.course_id}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
+                          <Typography variant="caption" color="text.secondary">
                               Created: {new Date(lesson.created_at).toLocaleDateString()}
                             </Typography>
                             {lesson.instructor_id && (
@@ -322,7 +308,6 @@ const LessonsPage: React.FC = () => {
                             >
                               View
                             </Button>
-                          </Box>
                         </Box>
                       }
                     />

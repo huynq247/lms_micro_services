@@ -243,6 +243,21 @@ const DecksPage: React.FC = () => {
               >
                 Create Deck
               </Button>
+              <Button
+                variant="contained"
+                startIcon={<School />}
+                onClick={() => navigate('/decks/ai-creator')}
+                size="large"
+                sx={{
+                  background: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #ee5a52 0%, #ff6b6b 100%)',
+                    transform: 'translateY(-2px)',
+                  },
+                }}
+              >
+                Create with AI
+              </Button>
             </RoleBasedComponent>
           </Box>
         </GlassHeader>
@@ -743,6 +758,15 @@ const DecksPage: React.FC = () => {
         <MenuItem onClick={handleEditDeck}>
           <Edit sx={{ mr: 1 }} />
           Edit
+        </MenuItem>
+        <MenuItem onClick={() => {
+          if (selectedDeck) {
+            navigate(`/decks/ai-flashcard-creator?deckId=${selectedDeck.id}`);
+          }
+          handleMenuClose();
+        }}>
+          <School sx={{ mr: 1 }} />
+          Add AI Flashcard
         </MenuItem>
         <MenuItem onClick={handleDeleteDeckFromMenu} sx={{ color: 'error.main' }}>
           <Delete sx={{ mr: 1 }} />

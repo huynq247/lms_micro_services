@@ -267,7 +267,11 @@ export const contentService = {
   },
 
   createFlashcard: async (flashcardData: CreateFlashcardRequest): Promise<Flashcard> => {
+    console.log('🔍 Creating flashcard for deck:', flashcardData.deck_id);
+    console.log('📦 Flashcard full data:', flashcardData);
+    
     const response = await apiClient.post(`/api/decks/${flashcardData.deck_id}/flashcards`, flashcardData);
+    console.log('📊 Create flashcard response:', response.data);
     return response.data;
   },
 

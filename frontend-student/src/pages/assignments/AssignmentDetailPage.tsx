@@ -481,9 +481,12 @@ const AssignmentDetailPage: React.FC = () => {
                     </AccordionSummary>
                     <AccordionDetails>
                       <Box sx={{ pl: 6 }}>
-                        <Typography variant="body2" sx={{ mb: 2 }}>
-                          {lesson.content || 'No content description available.'}
-                        </Typography>
+                        {/* Only show content if lesson is not active */}
+                        {selectedLesson?.id !== lesson.id && (
+                          <Typography variant="body2" sx={{ mb: 2 }}>
+                            {lesson.content || 'No content description available.'}
+                          </Typography>
+                        )}
                         
                         {lesson.is_published && (currentStatus === 'in_progress' || currentStatus === 'pending') && (
                           <Button
@@ -491,7 +494,7 @@ const AssignmentDetailPage: React.FC = () => {
                             size="small"
                             startIcon={<PlayArrow />}
                             onClick={() => handleStartLesson(lesson)}
-                            sx={{ mt: 1 }}
+                            sx={{ mt: selectedLesson?.id === lesson.id ? 0 : 1 }}
                           >
                             {selectedLesson?.id === lesson.id ? 'Lesson Active' : 'Start Lesson'}
                           </Button>

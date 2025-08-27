@@ -19,6 +19,8 @@ import {
   Assignment,
   Quiz,
   ExitToApp,
+  AutoAwesome,
+  SmartToy,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -42,6 +44,8 @@ const Layout: React.FC = () => {
     { text: 'Courses', icon: <School />, path: '/courses', roles: ['ADMIN'] },
     { text: 'Lessons', icon: <School />, path: '/lessons', roles: ['ADMIN'] },
     { text: 'Flashcard Decks', icon: <Quiz />, path: '/decks', roles: ['ADMIN'] },
+    { text: 'AI Flashcard Creator', icon: <SmartToy />, path: '/ai/flashcard-creator', roles: ['ADMIN'] },
+    { text: 'AI Deck Creator', icon: <AutoAwesome />, path: '/ai/deck-creator', roles: ['ADMIN'] },
   ];
 
   // Filter menu items based on user role

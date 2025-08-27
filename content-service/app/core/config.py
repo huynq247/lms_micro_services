@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     auth_service_url: str = "http://localhost:8001"
     jwt_secret_key: str = "microservices-lms-secret-key-2025-production-secure-auth-service"
     jwt_algorithm: str = "HS256"
+    jwt_expiration_time: int = 1440  # minutes
+    
+    # AI Configuration
+    gemini_api_key: str = "your-gemini-api-key-here"
     
     class Config:
         env_file = ".env"

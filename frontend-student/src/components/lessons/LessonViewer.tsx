@@ -77,24 +77,75 @@ const LessonViewer: React.FC<LessonViewerProps> = ({
   const getVideoEmbedUrl = (url: string) => {
     if (!url) return '';
     
+    console.log('🎥 Processing video URL:', url);
+    
     // YouTube URL conversion
     if (url.includes('youtube.com/watch?v=')) {
       const videoId = url.split('v=')[1]?.split('&')[0];
-      return `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
+      const embedUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
+      console.log('🎬 YouTube embed URL:', embedUrl);
+      return embedUrl;
     }
     
     if (url.includes('youtu.be/')) {
       const videoId = url.split('youtu.be/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
+      const embedUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
+      console.log('🎬 YouTube short embed URL:', embedUrl);
+      return embedUrl;
     }
     
     // Vimeo URL conversion
     if (url.includes('vimeo.com/')) {
       const videoId = url.split('vimeo.com/')[1];
-      return `https://player.vimeo.com/video/${videoId}`;
+      const embedUrl = `https://player.vimeo.com/video/${videoId}`;
+      console.log('🎬 Vimeo embed URL:', embedUrl);
+      return embedUrl;
     }
     
-    // Direct video URL
+    // Google Drive URL conversion
+    if (url.includes('drive.google.com')) {
+      let fileId = '';
+      
+      // Handle different Google Drive URL formats
+      if (url.includes('/file/d/')) {
+        fileId = url.split('/file/d/')[1]?.split('/')[0];
+      } else if (url.includes('id=')) {
+        fileId = url.split('id=')[1]?.split('&')[0];
+      }
+      
+      if (fileId) {
+        // Try different Google Drive embed formats
+        // First try the standard preview format
+        const embedUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+        console.log('🎬 Google Drive embed URL:', embedUrl);
+        console.log('📝 Note: If video doesn\'t play, ensure file is shared with "Anyone with the link"');
+        return embedUrl;
+      }
+    }
+    
+    // OneDrive URL conversion
+    if (url.includes('onedrive.live.com') || url.includes('1drv.ms')) {
+      // OneDrive requires replacing 'view' with 'embed' in the URL
+      let embedUrl = url;
+      if (url.includes('view.aspx')) {
+        embedUrl = url.replace('view.aspx', 'embed.aspx');
+      } else if (url.includes('redir?')) {
+        // Handle short OneDrive links - need to get the full URL first
+        embedUrl = url + '&embed=1';
+      }
+      console.log('🎬 OneDrive embed URL:', embedUrl);
+      return embedUrl;
+    }
+    
+    // SharePoint URL conversion
+    if (url.includes('sharepoint.com')) {
+      const embedUrl = url.replace('view.aspx', 'embed.aspx');
+      console.log('🎬 SharePoint embed URL:', embedUrl);
+      return embedUrl;
+    }
+    
+    // Direct video URL or other platforms
+    console.log('🎬 Direct video URL:', url);
     return url;
   };
 
@@ -172,7 +223,15 @@ const LessonViewer: React.FC<LessonViewerProps> = ({
           {isVideoUrl && (
             <Paper elevation={3} sx={{ borderRadius: 2, overflow: 'hidden' }}>
               <Box sx={{ position: 'relative', paddingTop: '56.25%' /* 16:9 aspect ratio */ }}>
-                {embedUrl.includes('youtube.com') || embedUrl.includes('vimeo.com') ? (
+                {/* Check if it's an embeddable platform or direct video */}
+                {(embedUrl.includes('youtube.com') || 
+                  embedUrl.includes('vimeo.com') || 
+                  embedUrl.includes('drive.google.com') || 
+                  embedUrl.includes('onedrive.live.com') || 
+                  embedUrl.includes('1drv.ms') || 
+                  embedUrl.includes('sharepoint.com') ||
+                  embedUrl !== lesson.video_url // URL was converted, so it's embeddable
+                ) ? (
                   <iframe
                     src={embedUrl}
                     title={lesson.title}
@@ -186,6 +245,8 @@ const LessonViewer: React.FC<LessonViewerProps> = ({
                     }}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
+                    onLoad={() => console.log('✅ Video iframe loaded successfully')}
+                    onError={() => console.error('❌ Video iframe failed to load')}
                   />
                 ) : (
                   <video

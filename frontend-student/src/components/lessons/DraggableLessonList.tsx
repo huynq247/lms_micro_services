@@ -102,18 +102,6 @@ function SortableLessonItem({ lesson, index, onEdit, onDelete, canManage }: Sort
             <Typography variant="h6" gutterBottom>
               {lesson.title}
             </Typography>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-              }}
-            >
-              {lesson.content}
-            </Typography>
           </Box>
 
           {/* Duration */}

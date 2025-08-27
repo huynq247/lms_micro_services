@@ -10,6 +10,7 @@ from app.api.courses import router as courses_router
 from app.api.lessons import router as lessons_router
 from app.api.decks import router as decks_router
 from app.api.flashcards import router as flashcards_router
+from app.api.ai import router as ai_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -86,7 +87,8 @@ async def root():
             "courses": "/api/v1/courses",
             "lessons": "/api/v1/lessons",
             "decks": "/api/v1/decks",
-            "flashcards": "/api/v1/flashcards"
+            "flashcards": "/api/v1/flashcards",
+            "ai": "/api/v1/ai"
         }
     }
 
@@ -95,6 +97,7 @@ app.include_router(courses_router, prefix="/api/v1")
 app.include_router(lessons_router, prefix="/api/v1")
 app.include_router(decks_router, prefix="/api/v1")
 app.include_router(flashcards_router, prefix="/api/v1")
+app.include_router(ai_router, prefix="/api/v1")
 
 if __name__ == "__main__":
     uvicorn.run(
